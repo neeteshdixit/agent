@@ -1,34 +1,48 @@
 import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
 import './App.css'
+import Automation from './components/Automation'
+import Chat from './components/Chat'
+
+type Tab = 'automation' | 'chat'
 
 function App() {
-  const [count, setCount] = useState(0)
+  const [activeTab, setActiveTab] = useState<Tab>('automation')
 
   return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
+    <div className="app-container">
+      <header className="app-header">
+        <div className="header-content">
+          <h1>🚀 Agent Dashboard</h1>
+          <p>Your AI-powered automation and chat assistant</p>
+        </div>
+      </header>
+
+      <nav className="app-nav">
+        <button
+          className={`nav-button ${activeTab === 'automation' ? 'active' : ''}`}
+          onClick={() => setActiveTab('automation')}
+        >
+          <span className="nav-icon">🤖</span>
+          Automation
         </button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
+        <button
+          className={`nav-button ${activeTab === 'chat' ? 'active' : ''}`}
+          onClick={() => setActiveTab('chat')}
+        >
+          <span className="nav-icon">💬</span>
+          Chat
+        </button>
+      </nav>
+
+      <main className="app-main">
+        {activeTab === 'automation' && <Automation />}
+        {activeTab === 'chat' && <Chat />}
+      </main>
+
+      <footer className="app-footer">
+        <p>© 2026 Agent Dashboard. Powered by React + TypeScript + Vite</p>
+      </footer>
+    </div>
   )
 }
 
