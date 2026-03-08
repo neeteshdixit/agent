@@ -127,6 +127,11 @@ export const messagingAutomationService = {
     const script = `
 $ErrorActionPreference = 'Stop'
 Add-Type -AssemblyName System.Windows.Forms
+try {
+  Add-Type -AssemblyName UIAutomationClient
+  Add-Type -AssemblyName UIAutomationTypes
+} catch {
+}
 $wshell = New-Object -ComObject WScript.Shell
 
 function Activate-WhatsAppWindow([int]$timeoutSeconds = 12) {
@@ -145,6 +150,64 @@ function Activate-WhatsAppWindow([int]$timeoutSeconds = 12) {
   return $false
 }
 
+function Get-WhatsAppWindowElement {
+  if (-not ('System.Windows.Automation.AutomationElement' -as [type])) {
+    return $null
+  }
+
+  $root = [System.Windows.Automation.AutomationElement]::RootElement
+  if ($null -eq $root) {
+    return $null
+  }
+
+  foreach ($title in @('WhatsApp', 'WhatsApp Beta')) {
+    $cond = New-Object System.Windows.Automation.PropertyCondition(
+      [System.Windows.Automation.AutomationElement]::NameProperty,
+      $title
+    )
+    $window = $root.FindFirst([System.Windows.Automation.TreeScope]::Children, $cond)
+    if ($window -ne $null) {
+      return $window
+    }
+  }
+
+  return $null
+}
+
+function Try-InvokeSendButton($windowElement) {
+  if ($null -eq $windowElement) {
+    return $false
+  }
+
+  if (-not ('System.Windows.Automation.ControlType' -as [type])) {
+    return $false
+  }
+
+  $buttonType = [System.Windows.Automation.ControlType]::Button
+  foreach ($label in @('Send', 'send')) {
+    $nameCond = New-Object System.Windows.Automation.PropertyCondition(
+      [System.Windows.Automation.AutomationElement]::NameProperty,
+      $label
+    )
+    $typeCond = New-Object System.Windows.Automation.PropertyCondition(
+      [System.Windows.Automation.AutomationElement]::ControlTypeProperty,
+      $buttonType
+    )
+    $andCond = New-Object System.Windows.Automation.AndCondition($nameCond, $typeCond)
+    $button = $windowElement.FindFirst([System.Windows.Automation.TreeScope]::Descendants, $andCond)
+    if ($button -ne $null) {
+      try {
+        $invokePattern = $button.GetCurrentPattern([System.Windows.Automation.InvokePattern]::Pattern)
+        $invokePattern.Invoke()
+        return $true
+      } catch {
+      }
+    }
+  }
+
+  return $false
+}
+
 Start-Process ${quotePowerShellString(whatsappUri)}
 
 Start-Sleep -Seconds 4
@@ -153,9 +216,19 @@ if (-not $activated) {
   throw 'WhatsApp window not found. Open WhatsApp Desktop and keep it visible, then retry.'
 }
 
-[System.Windows.Forms.SendKeys]::SendWait('{ENTER}')
-Start-Sleep -Milliseconds 300
-Write-Output 'OK:phone_deeplink'
+$method = ''
+$windowElement = Get-WhatsAppWindowElement
+if (Try-InvokeSendButton $windowElement) {
+  $method = 'uia_send_button'
+} else {
+  [System.Windows.Forms.SendKeys]::SendWait('{ENTER}')
+  Start-Sleep -Milliseconds 350
+  [System.Windows.Forms.SendKeys]::SendWait('%s')
+  Start-Sleep -Milliseconds 350
+  $method = 'keyboard_fallback'
+}
+
+Write-Output ('OK:' + $method)
 `;
 
     try {
