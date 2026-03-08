@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react'
 import '../styles/Chat.css'
 
 function Chat() {
+  const messageIdRef = useRef(2)
   const [messages, setMessages] = useState([
     {
       id: '1',
@@ -25,8 +26,11 @@ function Chat() {
   const sendMessage = async () => {
     if (!inputValue.trim()) return
 
+    const userId = String(messageIdRef.current++)
+    const agentId = String(messageIdRef.current++)
+
     const userMessage = {
-      id: Date.now().toString(),
+      id: userId,
       text: inputValue,
       sender: 'user',
       timestamp: new Date()
@@ -38,7 +42,7 @@ function Chat() {
 
     setTimeout(() => {
       const agentResponse = {
-        id: (Date.now() + 1).toString(),
+        id: agentId,
         text: generateAgentResponse(inputValue),
         sender: 'agent',
         timestamp: new Date()

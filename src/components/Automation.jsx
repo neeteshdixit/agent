@@ -1,7 +1,8 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import '../styles/Automation.css'
 
 function Automation() {
+  const automationIdRef = useRef(4)
   const [automations, setAutomations] = useState([
     { id: '1', name: 'Email Backup', description: 'Automated email backup every hour', status: 'idle' },
     { id: '2', name: 'Data Sync', description: 'Sync data across devices', status: 'idle' },
@@ -38,7 +39,7 @@ function Automation() {
       setAutomations(prev => [
         ...prev,
         {
-          id: Date.now().toString(),
+          id: String(automationIdRef.current++),
           name: newAutomation,
           description: 'New automation task',
           status: 'idle'
