@@ -144,15 +144,16 @@ export const browserAutomationService = {
 
       await page.waitForFunction(
         (contactName) =>
-          Array.from(document.querySelectorAll('span[title]')).some(
+          Array.from(globalThis.document.querySelectorAll('span[title]')).some(
             (node) => node.getAttribute('title') === contactName,
           ),
         { timeout: DEFAULT_TIMEOUT },
         contact,
       );
 
-      const clicked = await page.evaluate((contactName) => {
-        const node = Array.from(document.querySelectorAll('span[title]')).find(
+      const clicked = await page.evaluate(
+        (contactName) => {
+        const node = Array.from(globalThis.document.querySelectorAll('span[title]')).find(
           (item) => item.getAttribute('title') === contactName,
         );
         if (!node) {
@@ -160,7 +161,9 @@ export const browserAutomationService = {
         }
         node.click();
         return true;
-      }, contact);
+        },
+        contact,
+      );
 
       if (!clicked) {
         throw new Error(`Contact "${contact}" was not found on WhatsApp Web.`);

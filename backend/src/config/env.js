@@ -17,6 +17,19 @@ const resolveArtifactsDir = () => {
   return path.resolve(process.cwd(), 'artifacts');
 };
 
+const parseJsonObjectEnv = (rawValue, fallback = {}) => {
+  if (!rawValue) {
+    return fallback;
+  }
+
+  try {
+    const parsed = JSON.parse(rawValue);
+    return parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? parsed : fallback;
+  } catch {
+    return fallback;
+  }
+};
+
 export const env = {
   backendRoot,
   nodeEnv: process.env.NODE_ENV ?? 'development',
@@ -37,7 +50,6 @@ export const env = {
   smtpUser: process.env.SMTP_USER ?? '',
   smtpPass: process.env.SMTP_PASS ?? '',
   mailFrom: process.env.MAIL_FROM ?? 'no-reply@ai-agent.local',
+  whatsappContacts: parseJsonObjectEnv(process.env.WHATSAPP_CONTACTS_JSON, {}),
   agentArtifactsDir: resolveArtifactsDir(),
-  pythonExecutable: process.env.PYTHON_EXECUTABLE ?? 'python',
-  pythonAutomationTimeoutMs: Number(process.env.PYTHON_AUTOMATION_TIMEOUT_MS ?? 60000),
 };

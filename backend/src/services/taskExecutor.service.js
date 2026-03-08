@@ -206,18 +206,8 @@ export const taskExecutorService = {
         }
 
         progress.push('Opening WhatsApp Desktop');
-        const openExecution = await safeExecute(
-          () => localAutomationService.openKnownApp({ appName: 'whatsapp' }),
-          'Could not open WhatsApp Desktop.',
-        );
-
-        if (openExecution.status !== 'completed') {
-          return withStep(openExecution.status, openExecution.result);
-        }
-
         progress.push(`Searching contact: ${args.contact}`);
-        progress.push('Typing message');
-        progress.push('Pressing Enter to send');
+        progress.push('Sending message');
 
         const execution = await safeExecute(
           () =>
@@ -296,7 +286,7 @@ export const taskExecutorService = {
         }
 
         progress.push('Preparing email payload');
-        progress.push('Sending email with Python SMTP automation');
+        progress.push('Sending email with SMTP automation');
         const execution = await safeExecute(
           () =>
             messagingAutomationService.sendMail({
@@ -304,7 +294,7 @@ export const taskExecutorService = {
               subject: args.subject ?? 'Message from AI Assistant',
               body: args.body,
             }),
-          'Failed to send email using Python automation.',
+          'Failed to send email using SMTP automation.',
         );
         return withStep(execution.status, execution.result);
       }

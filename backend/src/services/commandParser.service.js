@@ -83,11 +83,10 @@ const parseWhatsAppMessagePayload = (original) => {
   const normalized = cleanText(
     original
       .replace(/^open\s+whatsapp\s+and\s+/i, '')
-      .replace(/\s+on\s+chrome$/i, '')
-      .replace(/\s+in\s+chrome$/i, ''),
+      .replace(/\s+(?:on|in)\s+chrome\b/gi, ''),
   );
 
-  const match = normalized.match(/send\s+(?:a\s+)?(?:whatsapp\s+)?message\s+to\s+(.+)$/i);
+  const match = normalized.match(/send\s+(?:a\s+)?(?:whatsapp\s+)?(?:message\s+)?to\s+(.+)$/i);
   if (!match?.[1]) {
     return null;
   }
@@ -123,7 +122,7 @@ const parseWhatsAppMessagePayload = (original) => {
 };
 
 const isWhatsAppMessageCommand = (text) =>
-  /send\s+(?:a\s+)?(?:whatsapp\s+)?message\s+to/i.test(text) ||
+  /send\s+(?:a\s+)?(?:whatsapp\s+)?(?:message\s+)?to/i.test(text) ||
   /open\s+whatsapp.*send\s+message\s+to/i.test(text);
 
 const isMailCommand = (text) =>

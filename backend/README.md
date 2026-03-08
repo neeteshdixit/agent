@@ -47,6 +47,14 @@ Supported command examples:
 - `play shape of you on youtube on chrome`
 - `search ai tutorials on youtube`
 - `send email to someone@example.com saying hello`
+- `send mail hello baby to someone@example.com`
+- `send whatsapp message to HR maam saying hello baby`
+- `send whatsapp message to HR maam on chrome saying hello baby`
+
+For reliable WhatsApp Desktop sending:
+- Use phone number directly: `send whatsapp message to +919876543210 saying hello`
+- Or set contact mapping in `.env`:
+  - `WHATSAPP_CONTACTS_JSON={"hr maam":"919876543210"}`
 
 ## Browser Automation
 
