@@ -1,7 +1,7 @@
 import { commandParserService } from './commandParser.service.js';
 
 const getRouteType = (action) => {
-  if (action.startsWith('browser_')) {
+  if (action.startsWith('browser_') || action === 'send_whatsapp_web_message') {
     return 'browser';
   }
 

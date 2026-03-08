@@ -5,6 +5,7 @@ import { env } from '../config/env.js';
 import { emailService } from './email.service.js';
 import { localAutomationService } from './localAutomation.service.js';
 import { browserAutomationService } from './browserAutomation.service.js';
+import { messagingAutomationService } from './messagingAutomation.service.js';
 
 const sanitizeFilename = (value) => value.replace(/[^a-z0-9-_]/gi, '-').slice(0, 50);
 
@@ -135,6 +136,35 @@ export const taskExecutorService = {
         return withStep(execution.status, execution.result);
       }
 
+      case 'send_whatsapp_web_message': {
+        if (!args.contact) {
+          return withStep('blocked', {
+            message: 'Contact name is required. Use: send whatsapp message to <contact> ...',
+          });
+        }
+        if (!args.message) {
+          return withStep('blocked', {
+            message:
+              'Message text is required for WhatsApp automation. Example: send whatsapp message to HR maam saying hello',
+          });
+        }
+
+        progress.push('Launching Chrome');
+        progress.push('Opening WhatsApp Web');
+        progress.push(`Searching contact: ${args.contact}`);
+        progress.push('Sending message');
+
+        const execution = await safeExecute(
+          () =>
+            browserAutomationService.sendWhatsAppWebMessage({
+              contact: args.contact,
+              message: args.message,
+            }),
+          'Failed to send WhatsApp Web message.',
+        );
+        return withStep(execution.status, execution.result);
+      }
+
       case 'open_folder_downloads': {
         progress.push('Opening Downloads folder');
         const execution = await safeExecute(
@@ -158,6 +188,44 @@ export const taskExecutorService = {
         const execution = await safeExecute(
           () => localAutomationService.openKnownApp({ appName: args.appName ?? '' }),
           'Unable to open the requested local application.',
+        );
+        return withStep(execution.status, execution.result);
+      }
+
+      case 'send_whatsapp_message': {
+        if (!args.contact) {
+          return withStep('blocked', {
+            message: 'Contact name is required. Use: send whatsapp message to <contact> ...',
+          });
+        }
+        if (!args.message) {
+          return withStep('blocked', {
+            message:
+              'Message text is required for WhatsApp automation. Example: send whatsapp message to HR maam saying hello',
+          });
+        }
+
+        progress.push('Opening WhatsApp Desktop');
+        const openExecution = await safeExecute(
+          () => localAutomationService.openKnownApp({ appName: 'whatsapp' }),
+          'Could not open WhatsApp Desktop.',
+        );
+
+        if (openExecution.status !== 'completed') {
+          return withStep(openExecution.status, openExecution.result);
+        }
+
+        progress.push(`Searching contact: ${args.contact}`);
+        progress.push('Typing message');
+        progress.push('Pressing Enter to send');
+
+        const execution = await safeExecute(
+          () =>
+            messagingAutomationService.sendWhatsAppDesktopMessage({
+              contact: args.contact,
+              message: args.message,
+            }),
+          'Failed to send WhatsApp Desktop message.',
         );
         return withStep(execution.status, execution.result);
       }
@@ -198,15 +266,47 @@ export const taskExecutorService = {
         }
 
         progress.push('Sending email through configured SMTP provider');
-        await emailService.sendEmail({
-          to: args.to,
-          subject: args.subject ?? 'Message from AI Assistant',
-          body: args.body ?? 'Sent via task runner.',
-        });
+        const execution = await safeExecute(
+          () =>
+            emailService.sendEmail({
+              to: args.to,
+              subject: args.subject ?? 'Message from AI Assistant',
+              body: args.body ?? 'Sent via task runner.',
+            }),
+          'Failed to send email through SMTP.',
+        );
 
-        return {
-          ...withStep('completed', { message: `Email sent to ${args.to}.` }),
-        };
+        if (execution.status === 'failed') {
+          return withStep('failed', execution.result);
+        }
+
+        return withStep('completed', { message: `Email sent to ${args.to}.` });
+      }
+
+      case 'send_mail': {
+        if (!args.to) {
+          return withStep('blocked', {
+            message: 'Recipient email is required. Use: send mail <message> to <email>',
+          });
+        }
+        if (!args.body) {
+          return withStep('blocked', {
+            message: 'Email message is required.',
+          });
+        }
+
+        progress.push('Preparing email payload');
+        progress.push('Sending email with Python SMTP automation');
+        const execution = await safeExecute(
+          () =>
+            messagingAutomationService.sendMail({
+              to: args.to,
+              subject: args.subject ?? 'Message from AI Assistant',
+              body: args.body,
+            }),
+          'Failed to send email using Python automation.',
+        );
+        return withStep(execution.status, execution.result);
       }
 
       case 'chat_only':

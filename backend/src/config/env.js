@@ -18,6 +18,7 @@ const resolveArtifactsDir = () => {
 };
 
 export const env = {
+  backendRoot,
   nodeEnv: process.env.NODE_ENV ?? 'development',
   port: Number(process.env.PORT ?? 5000),
   databaseUrl:
@@ -37,4 +38,6 @@ export const env = {
   smtpPass: process.env.SMTP_PASS ?? '',
   mailFrom: process.env.MAIL_FROM ?? 'no-reply@ai-agent.local',
   agentArtifactsDir: resolveArtifactsDir(),
+  pythonExecutable: process.env.PYTHON_EXECUTABLE ?? 'python',
+  pythonAutomationTimeoutMs: Number(process.env.PYTHON_AUTOMATION_TIMEOUT_MS ?? 60000),
 };

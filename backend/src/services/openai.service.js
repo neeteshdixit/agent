@@ -13,7 +13,7 @@ const safeJsonParse = (value) => {
 };
 
 const inferRoute = (action) => {
-  if (action.startsWith('browser_')) {
+  if (action.startsWith('browser_') || action === 'send_whatsapp_web_message') {
     return 'browser';
   }
 
@@ -78,6 +78,9 @@ Allowed actions:
 - browser_google_search
 - browser_search_youtube
 - browser_play_youtube
+- send_mail
+- send_whatsapp_message
+- send_whatsapp_web_message
 - compose_email
 - send_email
 - create_document

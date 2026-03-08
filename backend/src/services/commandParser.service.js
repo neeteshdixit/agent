@@ -40,20 +40,6 @@ const extractPlayQuery = (original) => {
   );
 };
 
-const getEmailBody = (command) => {
-  const match = command.match(/(?:saying|say|message|body)\s+(.+)$/i);
-  if (match?.[1]) {
-    return cleanText(match[1]);
-  }
-
-  const parts = command.split(':');
-  if (parts.length > 1) {
-    return cleanText(parts.slice(1).join(':'));
-  }
-
-  return 'Hello';
-};
-
 const parseOpenAppIntent = (text) => {
   const openMatch = text.match(/\bopen\s+(.+)$/i);
   if (!openMatch?.[1]) {
@@ -69,12 +55,79 @@ const parseOpenAppIntent = (text) => {
       .replace(/\bsoftware\b/gi, ''),
   );
 
-  if (!appName) {
+  return appName || null;
+};
+
+const parseEmailCommand = (original) => {
+  const email = original.match(EMAIL_REGEX)?.[1];
+  if (!email) {
     return null;
   }
 
-  return appName;
+  const explicitBody = original.match(
+    /send\s+(?:mail|email)\s+to\s+[^\s]+\s+(?:saying|say|message|body)\s+(.+)$/i,
+  )?.[1];
+  if (explicitBody) {
+    return { to: email, body: cleanText(explicitBody), subject: 'Message from AI Assistant' };
+  }
+
+  const bodyBeforeTo = original.match(/send\s+(?:mail|email)\s+(.+?)\s+to\s+[^\s]+/i)?.[1];
+  if (bodyBeforeTo) {
+    return { to: email, body: cleanText(bodyBeforeTo), subject: 'Message from AI Assistant' };
+  }
+
+  return { to: email, body: 'Hello', subject: 'Message from AI Assistant' };
 };
+
+const parseWhatsAppMessagePayload = (original) => {
+  const normalized = cleanText(
+    original
+      .replace(/^open\s+whatsapp\s+and\s+/i, '')
+      .replace(/\s+on\s+chrome$/i, '')
+      .replace(/\s+in\s+chrome$/i, ''),
+  );
+
+  const match = normalized.match(/send\s+(?:a\s+)?(?:whatsapp\s+)?message\s+to\s+(.+)$/i);
+  if (!match?.[1]) {
+    return null;
+  }
+
+  const rest = cleanText(match[1]);
+  const explicit = rest.match(/(.+?)\s+(?:saying|say|message|that|:)\s+(.+)$/i);
+  if (explicit?.[1] && explicit?.[2]) {
+    return {
+      contact: cleanText(explicit[1]),
+      message: cleanText(explicit[2]),
+    };
+  }
+
+  const tokens = rest.split(' ').filter(Boolean);
+  if (tokens.length >= 4) {
+    return {
+      contact: tokens.slice(0, 2).join(' '),
+      message: tokens.slice(2).join(' '),
+    };
+  }
+
+  if (tokens.length === 3) {
+    return {
+      contact: tokens[0],
+      message: tokens.slice(1).join(' '),
+    };
+  }
+
+  return {
+    contact: rest,
+    message: '',
+  };
+};
+
+const isWhatsAppMessageCommand = (text) =>
+  /send\s+(?:a\s+)?(?:whatsapp\s+)?message\s+to/i.test(text) ||
+  /open\s+whatsapp.*send\s+message\s+to/i.test(text);
+
+const isMailCommand = (text) =>
+  /send\s+mail/i.test(text) || /send\s+email/i.test(text);
 
 export const commandParserService = {
   parse: (command) => {
@@ -88,6 +141,32 @@ export const commandParserService = {
 
     if (!text) {
       return { action: 'chat_only', args: {}, source: 'parser' };
+    }
+
+    if (isWhatsAppMessageCommand(text)) {
+      const payload = parseWhatsAppMessagePayload(original) ?? { contact: '', message: '' };
+      if (chromePreference && !localPreference) {
+        return {
+          action: 'send_whatsapp_web_message',
+          args: payload,
+          source: 'parser',
+        };
+      }
+
+      return {
+        action: 'send_whatsapp_message',
+        args: payload,
+        source: 'parser',
+      };
+    }
+
+    if (isMailCommand(text)) {
+      const payload = parseEmailCommand(original) ?? { to: undefined, body: 'Hello', subject: 'Message from AI Assistant' };
+      return {
+        action: 'send_mail',
+        args: payload,
+        source: 'parser',
+      };
     }
 
     if (searchIntent && youtubeIntent) {
@@ -167,26 +246,14 @@ export const commandParserService = {
       return { action: 'create_document', args: { title: 'new-document' }, source: 'parser' };
     }
 
-    if (text.includes('send email')) {
-      const emailMatch = original.match(EMAIL_REGEX);
-      return {
-        action: 'send_email',
-        args: {
-          to: emailMatch?.[1],
-          body: getEmailBody(original),
-          subject: 'Message from AI Assistant',
-        },
-        source: 'parser',
-      };
-    }
-
     if (text.includes('write mail') || text.includes('compose mail')) {
-      const emailMatch = original.match(EMAIL_REGEX);
+      const email = original.match(EMAIL_REGEX)?.[1];
+      const body = original.match(/(?:saying|say|message|body)\s+(.+)$/i)?.[1] || 'Hello';
       return {
         action: 'compose_email',
         args: {
-          to: emailMatch?.[1],
-          body: getEmailBody(original),
+          to: email,
+          body: cleanText(body),
           subject: 'Draft from AI Assistant',
         },
         source: 'parser',
