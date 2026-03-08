@@ -1,16 +1,16 @@
 import crypto from 'node:crypto';
 import bcrypt from 'bcryptjs';
 import { OAuth2Client } from 'google-auth-library';
-import { User } from '../models/User.js';
 import { env } from '../config/env.js';
 import { signAuthToken } from '../utils/token.js';
 import { emailService } from '../services/email.service.js';
 import { AppError } from '../utils/AppError.js';
+import { userRepository } from '../repositories/user.repository.js';
 
 const googleClient = env.googleClientId ? new OAuth2Client(env.googleClientId) : null;
 
 const toPublicUser = (user) => ({
-  id: user._id,
+  id: user.id,
   name: user.name,
   email: user.email,
   createdAt: user.createdAt,
@@ -20,20 +20,20 @@ const makeOtp = () => String(Math.floor(100000 + Math.random() * 900000));
 const hashValue = (value) => crypto.createHash('sha256').update(value).digest('hex');
 
 const issueAuth = (user) => ({
-  token: signAuthToken({ userId: user._id.toString(), email: user.email }),
+  token: signAuthToken({ userId: user.id, email: user.email }),
   user: toPublicUser(user),
 });
 
 export const signup = async (req, res) => {
   const { name, email, password } = req.validatedBody;
 
-  const existing = await User.findOne({ email });
+  const existing = await userRepository.findByEmail(email);
   if (existing) {
     throw new AppError('An account with this email already exists', 409);
   }
 
   const passwordHash = await bcrypt.hash(password, 12);
-  const user = await User.create({
+  const user = await userRepository.create({
     name,
     email,
     passwordHash,
@@ -44,7 +44,7 @@ export const signup = async (req, res) => {
 
 export const login = async (req, res) => {
   const { email, password } = req.validatedBody;
-  const user = await User.findOne({ email });
+  const user = await userRepository.findByEmail(email);
 
   if (!user?.passwordHash) {
     throw new AppError('Invalid credentials', 401);
@@ -75,16 +75,15 @@ export const loginWithGoogle = async (req, res) => {
     throw new AppError('Google token did not include an email address', 400);
   }
 
-  let user = await User.findOne({ email: payload.email });
+  let user = await userRepository.findByEmail(payload.email);
   if (!user) {
-    user = await User.create({
+    user = await userRepository.create({
       name: payload.name ?? payload.email.split('@')[0],
       email: payload.email,
       googleId: payload.sub,
     });
   } else if (!user.googleId) {
-    user.googleId = payload.sub;
-    await user.save();
+    user = await userRepository.setGoogleId({ userId: user.id, googleId: payload.sub });
   }
 
   return res.json(issueAuth(user));
@@ -93,33 +92,35 @@ export const loginWithGoogle = async (req, res) => {
 export const requestOtp = async (req, res) => {
   const { email } = req.validatedBody;
 
-  let user = await User.findOne({ email });
+  let user = await userRepository.findByEmail(email);
   if (!user) {
-    user = await User.create({
+    user = await userRepository.create({
       name: email.split('@')[0],
       email,
     });
   }
 
   const otp = makeOtp();
-  user.otpCodeHash = hashValue(otp);
-  user.otpExpiresAt = new Date(Date.now() + 10 * 60 * 1000);
-  await user.save();
+  user = await userRepository.setOtp({
+    userId: user.id,
+    otpCodeHash: hashValue(otp),
+    otpExpiresAt: new Date(Date.now() + 10 * 60 * 1000),
+  });
 
-  await emailService.sendOtp({ email, otp });
+  await emailService.sendOtp({ email: user.email, otp });
 
   return res.json({ message: 'OTP sent to your email' });
 };
 
 export const verifyOtp = async (req, res) => {
   const { email, otp } = req.validatedBody;
-  const user = await User.findOne({ email });
+  let user = await userRepository.findByEmail(email);
 
   if (!user?.otpCodeHash || !user.otpExpiresAt) {
     throw new AppError('OTP was not requested for this account', 400);
   }
 
-  if (user.otpExpiresAt.getTime() < Date.now()) {
+  if (new Date(user.otpExpiresAt).getTime() < Date.now()) {
     throw new AppError('OTP has expired', 400);
   }
 
@@ -127,22 +128,21 @@ export const verifyOtp = async (req, res) => {
     throw new AppError('Invalid OTP', 400);
   }
 
-  user.otpCodeHash = null;
-  user.otpExpiresAt = null;
-  await user.save();
-
+  user = await userRepository.clearOtp(user.id);
   return res.json(issueAuth(user));
 };
 
 export const forgotPassword = async (req, res) => {
   const { email } = req.validatedBody;
-  const user = await User.findOne({ email });
+  const user = await userRepository.findByEmail(email);
 
   if (user) {
     const rawToken = crypto.randomBytes(32).toString('hex');
-    user.resetTokenHash = hashValue(rawToken);
-    user.resetTokenExpiresAt = new Date(Date.now() + 60 * 60 * 1000);
-    await user.save();
+    await userRepository.setResetToken({
+      userId: user.id,
+      resetTokenHash: hashValue(rawToken),
+      resetTokenExpiresAt: new Date(Date.now() + 60 * 60 * 1000),
+    });
 
     const resetUrl = `${env.clientUrl}/reset-password/${rawToken}`;
     await emailService.sendPasswordReset({ email, resetUrl });
@@ -157,21 +157,18 @@ export const resetPassword = async (req, res) => {
   const { token, password } = req.validatedBody;
   const tokenHash = hashValue(token);
 
-  const user = await User.findOne({
-    resetTokenHash: tokenHash,
-    resetTokenExpiresAt: { $gt: new Date() },
-  });
-
+  const user = await userRepository.findByResetTokenHash(tokenHash);
   if (!user) {
     throw new AppError('Invalid or expired reset token', 400);
   }
 
-  user.passwordHash = await bcrypt.hash(password, 12);
-  user.resetTokenHash = null;
-  user.resetTokenExpiresAt = null;
-  await user.save();
+  const passwordHash = await bcrypt.hash(password, 12);
+  const updatedUser = await userRepository.resetPassword({
+    userId: user.id,
+    passwordHash,
+  });
 
-  return res.json(issueAuth(user));
+  return res.json(issueAuth(updatedUser));
 };
 
 export const me = async (req, res) => {

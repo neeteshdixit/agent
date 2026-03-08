@@ -3,6 +3,7 @@
 ## Setup
 
 1. Copy `.env.example` to `.env` and fill required values.
+2. Ensure PostgreSQL is running and `DATABASE_URL` points to your database.
 2. Install dependencies:
    ```bash
    npm install
@@ -11,6 +12,8 @@
    ```bash
    npm run dev
    ```
+
+On startup the backend initializes required tables automatically.
 
 ## API modules
 

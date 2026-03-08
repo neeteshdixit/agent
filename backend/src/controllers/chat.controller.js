@@ -1,15 +1,15 @@
-import { ChatSession } from '../models/ChatSession.js';
-import { TaskLog } from '../models/TaskLog.js';
 import { AppError } from '../utils/AppError.js';
 import { openaiService } from '../services/openai.service.js';
 import { agentService } from '../services/agent.service.js';
+import { chatRepository } from '../repositories/chat.repository.js';
+import { taskRepository } from '../repositories/task.repository.js';
 
 const sessionSummary = (session) => ({
-  id: session._id,
+  id: session.id,
   title: session.title,
   updatedAt: session.updatedAt,
   createdAt: session.createdAt,
-  messageCount: session.messages.length,
+  messageCount: Number(session.messageCount ?? 0),
 });
 
 const deriveTitle = (message) => {
@@ -18,39 +18,34 @@ const deriveTitle = (message) => {
 };
 
 export const listSessions = async (req, res) => {
-  const sessions = await ChatSession.find({ userId: req.user._id })
-    .sort({ updatedAt: -1 })
-    .limit(50);
-
-  return res.json({
-    sessions: sessions.map(sessionSummary),
-  });
+  const sessions = await chatRepository.listSessionsByUser(req.user.id);
+  return res.json({ sessions: sessions.map(sessionSummary) });
 };
 
 export const getSession = async (req, res) => {
-  const session = await ChatSession.findOne({
-    _id: req.params.sessionId,
-    userId: req.user._id,
+  const session = await chatRepository.findSessionById({
+    sessionId: req.params.sessionId,
+    userId: req.user.id,
   });
 
   if (!session) {
     throw new AppError('Chat session not found', 404);
   }
 
+  const messages = await chatRepository.listMessages(session.id);
   return res.json({
     session: {
       ...sessionSummary(session),
-      messages: session.messages,
+      messages,
       lastAgentMode: session.lastAgentMode,
     },
   });
 };
 
 export const createSession = async (req, res) => {
-  const session = await ChatSession.create({
-    userId: req.user._id,
+  const session = await chatRepository.createSession({
+    userId: req.user.id,
     title: 'New chat',
-    messages: [],
   });
 
   return res.status(201).json({ session: sessionSummary(session) });
@@ -61,25 +56,27 @@ export const sendMessage = async (req, res) => {
 
   let session = null;
   if (sessionId) {
-    session = await ChatSession.findOne({ _id: sessionId, userId: req.user._id });
+    session = await chatRepository.findSessionById({
+      sessionId,
+      userId: req.user.id,
+    });
     if (!session) {
       throw new AppError('Chat session not found', 404);
     }
   }
 
   if (!session) {
-    session = await ChatSession.create({
-      userId: req.user._id,
+    session = await chatRepository.createSession({
+      userId: req.user.id,
       title: deriveTitle(message),
-      messages: [],
     });
   }
 
-  session.messages.push({
+  await chatRepository.appendMessage({
+    sessionId: session.id,
     role: 'user',
     content: message,
   });
-  session.lastAgentMode = Boolean(agentMode);
 
   let assistantContent = '';
   let task = null;
@@ -95,8 +92,8 @@ export const sendMessage = async (req, res) => {
       result: agentResult.execution.result,
     };
 
-    await TaskLog.create({
-      userId: req.user._id,
+    await taskRepository.create({
+      userId: req.user.id,
       command: message,
       action: agentResult.interpreted.action,
       status: agentResult.execution.status,
@@ -104,39 +101,45 @@ export const sendMessage = async (req, res) => {
       result: agentResult.execution.result,
     });
   } else {
-    const messagesForModel = session.messages.slice(-16).map((entry) => ({
-      role: entry.role === 'assistant' ? 'assistant' : 'user',
-      content: entry.content,
-    }));
+    const messagesForModel = await chatRepository.listRecentMessagesForModel({
+      sessionId: session.id,
+      limit: 16,
+    });
 
     assistantContent = await openaiService.generateChatReply({
       messages: messagesForModel,
     });
   }
 
-  session.messages.push({
+  await chatRepository.appendMessage({
+    sessionId: session.id,
     role: 'assistant',
     content: assistantContent,
     task,
   });
 
-  if (session.title === 'New chat') {
-    session.title = deriveTitle(message);
-  }
+  await chatRepository.updateSession({
+    sessionId: session.id,
+    title: session.title === 'New chat' ? deriveTitle(message) : undefined,
+    lastAgentMode: Boolean(agentMode),
+  });
 
-  await session.save();
-
+  const messages = await chatRepository.listMessages(session.id);
   return res.json({
-    sessionId: session._id,
+    sessionId: session.id,
     reply: assistantContent,
     task,
-    messages: session.messages,
+    messages,
   });
 };
 
 export const deleteSession = async (req, res) => {
-  const result = await ChatSession.deleteOne({ _id: req.params.sessionId, userId: req.user._id });
-  if (result.deletedCount === 0) {
+  const deleted = await chatRepository.deleteSession({
+    sessionId: req.params.sessionId,
+    userId: req.user.id,
+  });
+
+  if (!deleted) {
     throw new AppError('Chat session not found', 404);
   }
 
