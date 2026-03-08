@@ -32,6 +32,14 @@ app.use(hpp());
 app.use(morgan(env.nodeEnv === 'development' ? 'dev' : 'combined'));
 app.use('/api/auth', authLimiter);
 
+app.get('/', (req, res) => {
+  return res.json({
+    service: 'AI Assistant Backend',
+    status: 'ok',
+    health: '/api/health',
+  });
+});
+
 app.get('/api/health', (req, res) => {
   return res.json({
     status: 'ok',
