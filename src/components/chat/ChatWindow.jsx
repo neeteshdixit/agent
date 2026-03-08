@@ -16,7 +16,7 @@ function ChatWindow({ messages, onSendMessage, loading, agentMode, onToggleAgent
       setInput((prev) => `${prev}${prev ? ' ' : ''}${speech.transcript}`.trim());
       speech.clear();
     }
-  }, [speech]);
+  }, [speech.clear, speech.transcript]);
 
   const submitMessage = async () => {
     if (!input.trim() || loading) {

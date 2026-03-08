@@ -10,7 +10,7 @@ function TaskPanel({ tasks, onRunCommand, running }) {
       setCommand((prev) => `${prev}${prev ? ' ' : ''}${speech.transcript}`.trim());
       speech.clear();
     }
-  }, [speech]);
+  }, [speech.clear, speech.transcript]);
 
   const handleRun = async () => {
     if (!command.trim() || running) {

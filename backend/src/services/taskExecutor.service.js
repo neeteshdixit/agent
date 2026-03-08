@@ -24,7 +24,7 @@ export const taskExecutorService = {
       case 'open_word': {
         progress.push('Trying to open Microsoft Word');
         try {
-          await open.apps.open('winword');
+          await open.openApp('winword');
           return {
             status: 'completed',
             progress,
