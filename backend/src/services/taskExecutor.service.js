@@ -3,6 +3,7 @@ import path from 'node:path';
 import open from 'open';
 import { env } from '../config/env.js';
 import { emailService } from './email.service.js';
+import { localAutomationService } from './localAutomation.service.js';
 
 const sanitizeFilename = (value) => value.replace(/[^a-z0-9-_]/gi, '-').slice(0, 50);
 
@@ -12,34 +13,39 @@ export const taskExecutorService = {
 
     switch (action) {
       case 'open_whatsapp': {
-        progress.push('Opening WhatsApp Web');
-        await open('https://web.whatsapp.com');
-        return {
-          status: 'completed',
-          progress,
-          result: { message: 'WhatsApp Web opened in browser.' },
-        };
+        progress.push('Trying to open installed WhatsApp');
+        const execution = await localAutomationService.openKnownApp({ appName: 'whatsapp' });
+        return { ...execution, progress };
       }
 
       case 'open_word': {
         progress.push('Trying to open Microsoft Word');
-        try {
-          await open.openApp('winword');
-          return {
-            status: 'completed',
-            progress,
-            result: { message: 'Microsoft Word opened.' },
-          };
-        } catch {
-          return {
-            status: 'failed',
-            progress,
-            result: {
-              message:
-                'Could not open Microsoft Word automatically. Ensure Office is installed on this machine.',
-            },
-          };
-        }
+        const execution = await localAutomationService.openKnownApp({ appName: 'word' });
+        return { ...execution, progress };
+      }
+
+      case 'open_chrome': {
+        progress.push('Trying to open Google Chrome');
+        const execution = await localAutomationService.openKnownApp({ appName: 'chrome' });
+        return { ...execution, progress };
+      }
+
+      case 'open_folder_downloads': {
+        progress.push('Opening Downloads folder');
+        const execution = await localAutomationService.openDownloadsFolder();
+        return { ...execution, progress };
+      }
+
+      case 'play_music': {
+        progress.push('Trying to open local music player');
+        const execution = await localAutomationService.playMusic({ songPath: args.songPath });
+        return { ...execution, progress };
+      }
+
+      case 'open_app': {
+        progress.push(`Trying to open installed app: ${args.appName}`);
+        const execution = await localAutomationService.openKnownApp({ appName: args.appName ?? '' });
+        return { ...execution, progress };
       }
 
       case 'compose_email': {

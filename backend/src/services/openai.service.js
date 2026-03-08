@@ -1,5 +1,6 @@
 import OpenAI from 'openai';
 import { env } from '../config/env.js';
+import { commandParserService } from './commandParser.service.js';
 
 const client = env.openaiApiKey ? new OpenAI({ apiKey: env.openaiApiKey }) : null;
 
@@ -9,33 +10,6 @@ const safeJsonParse = (value) => {
   } catch {
     return null;
   }
-};
-
-const fallbackInterpretation = (command) => {
-  const text = command.toLowerCase();
-
-  if (text.includes('open whatsapp')) {
-    return { action: 'open_whatsapp', args: {} };
-  }
-
-  if (text.includes('open microsoft word') || text.includes('open word')) {
-    return { action: 'open_word', args: {} };
-  }
-
-  if (text.includes('write mail') || text.includes('compose mail')) {
-    const body = command.split(':').slice(1).join(':').trim() || 'Hello,';
-    return { action: 'compose_email', args: { body } };
-  }
-
-  if (text.includes('create a document') || text.includes('create document')) {
-    return { action: 'create_document', args: { title: 'new-document' } };
-  }
-
-  if (text.includes('send email')) {
-    return { action: 'send_email', args: {} };
-  }
-
-  return { action: 'chat_only', args: {} };
 };
 
 export const openaiService = {
@@ -61,8 +35,14 @@ export const openaiService = {
   },
 
   interpretTaskCommand: async ({ command }) => {
+    const parsedByRule = commandParserService.parse(command);
+
+    if (!client && parsedByRule.action !== 'chat_only') {
+      return parsedByRule;
+    }
+
     if (!client) {
-      return fallbackInterpretation(command);
+      return parsedByRule;
     }
 
     const completion = await client.chat.completions.create({
@@ -72,12 +52,32 @@ export const openaiService = {
       messages: [
         {
           role: 'system',
-          content: `You are a command parser. Convert user commands to JSON with this schema:
+          content: `You are a safe command parser for local automation.
+Allowed actions:
+- open_whatsapp
+- open_word
+- open_chrome
+- open_folder_downloads
+- play_music
+- open_app
+- compose_email
+- send_email
+- create_document
+- chat_only
+
+Return JSON in this exact format:
 {
-  "action": "open_whatsapp|open_word|compose_email|create_document|send_email|chat_only",
-  "args": { "title"?: string, "body"?: string, "to"?: string, "subject"?: string }
+  "action": "one_of_the_actions_above",
+  "args": {
+    "appName"?: string,
+    "to"?: string,
+    "subject"?: string,
+    "body"?: string,
+    "songPath"?: string,
+    "title"?: string
+  }
 }
-Only return JSON.`,
+Never output commands outside the allowed actions.`,
         },
         {
           role: 'user',
@@ -88,13 +88,15 @@ Only return JSON.`,
 
     const raw = completion.choices[0]?.message?.content ?? '';
     const parsed = safeJsonParse(raw);
+
     if (!parsed?.action) {
-      return fallbackInterpretation(command);
+      return parsedByRule;
     }
 
     return {
       action: parsed.action,
       args: parsed.args ?? {},
+      source: 'openai',
     };
   },
 };

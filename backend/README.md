@@ -32,3 +32,15 @@ On startup the backend initializes required tables automatically.
 - `DELETE /api/chat/sessions/:sessionId`
 - `GET /api/tasks/history`
 - `POST /api/tasks/run`
+
+## Local Automation Commands
+
+Supported command examples:
+
+- `open whatsapp`
+- `open installed whatsapp in my pc`
+- `open word`
+- `open chrome`
+- `open downloads folder`
+- `play music`
+- `send email to someone@example.com saying hello`
