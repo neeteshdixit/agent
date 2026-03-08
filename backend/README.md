@@ -39,8 +39,16 @@ Supported command examples:
 
 - `open whatsapp`
 - `open installed whatsapp in my pc`
+- `open whatsapp on chrome`
 - `open word`
 - `open chrome`
 - `open downloads folder`
 - `play music`
+- `play shape of you on youtube on chrome`
+- `search ai tutorials on youtube`
 - `send email to someone@example.com saying hello`
+
+## Browser Automation
+
+- Uses `puppeteer-core` to automate Chrome for safe, predefined actions.
+- Set `CHROME_EXECUTABLE_PATH` in `.env` if Chrome is installed in a custom location.

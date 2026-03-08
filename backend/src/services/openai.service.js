@@ -1,6 +1,6 @@
 import OpenAI from 'openai';
 import { env } from '../config/env.js';
-import { commandParserService } from './commandParser.service.js';
+import { commandRouterService } from './commandRouter.service.js';
 
 const client = env.openaiApiKey ? new OpenAI({ apiKey: env.openaiApiKey }) : null;
 
@@ -10,6 +10,18 @@ const safeJsonParse = (value) => {
   } catch {
     return null;
   }
+};
+
+const inferRoute = (action) => {
+  if (action.startsWith('browser_')) {
+    return 'browser';
+  }
+
+  if (action === 'chat_only') {
+    return 'chat';
+  }
+
+  return 'local';
 };
 
 export const openaiService = {
@@ -35,7 +47,7 @@ export const openaiService = {
   },
 
   interpretTaskCommand: async ({ command }) => {
-    const parsedByRule = commandParserService.parse(command);
+    const parsedByRule = commandRouterService.route(command);
 
     if (!client && parsedByRule.action !== 'chat_only') {
       return parsedByRule;
@@ -60,6 +72,12 @@ Allowed actions:
 - open_folder_downloads
 - play_music
 - open_app
+- browser_open_whatsapp_web
+- browser_open_youtube
+- browser_open_gmail
+- browser_google_search
+- browser_search_youtube
+- browser_play_youtube
 - compose_email
 - send_email
 - create_document
@@ -97,6 +115,7 @@ Never output commands outside the allowed actions.`,
       action: parsed.action,
       args: parsed.args ?? {},
       source: 'openai',
+      route: inferRoute(parsed.action),
     };
   },
 };
