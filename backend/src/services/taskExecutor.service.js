@@ -30,7 +30,7 @@ export const taskExecutorService = {
             progress,
             result: { message: 'Microsoft Word opened.' },
           };
-        } catch (error) {
+        } catch {
           return {
             status: 'failed',
             progress,

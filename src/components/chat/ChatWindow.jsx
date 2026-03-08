@@ -6,17 +6,18 @@ function ChatWindow({ messages, onSendMessage, loading, agentMode, onToggleAgent
   const [input, setInput] = useState('');
   const bottomRef = useRef(null);
   const speech = useSpeechRecognition();
+  const { transcript, clear } = speech;
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, loading]);
 
   useEffect(() => {
-    if (speech.transcript) {
-      setInput((prev) => `${prev}${prev ? ' ' : ''}${speech.transcript}`.trim());
-      speech.clear();
+    if (transcript) {
+      setInput((prev) => `${prev}${prev ? ' ' : ''}${transcript}`.trim());
+      clear();
     }
-  }, [speech.clear, speech.transcript]);
+  }, [clear, transcript]);
 
   const submitMessage = async () => {
     if (!input.trim() || loading) {

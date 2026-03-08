@@ -34,6 +34,11 @@ export default defineConfig([
         version: 'detect',
       },
     },
+    rules: {
+      'react/prop-types': 'off',
+      'react-refresh/only-export-components': 'off',
+      'react-hooks/set-state-in-effect': 'off',
+    },
   },
   {
     files: ['backend/src/**/*.js', '*.config.js', '*.js'],

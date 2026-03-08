@@ -20,7 +20,7 @@ export const requireAuth = async (req, res, next) => {
     req.user = user;
     req.auth = decoded;
     return next();
-  } catch (error) {
+  } catch {
     return res.status(401).json({ error: 'Invalid or expired token' });
   }
 };

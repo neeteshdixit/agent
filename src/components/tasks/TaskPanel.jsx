@@ -4,13 +4,14 @@ import { useSpeechRecognition } from '../../hooks/useSpeechRecognition';
 function TaskPanel({ tasks, onRunCommand, running }) {
   const [command, setCommand] = useState('');
   const speech = useSpeechRecognition();
+  const { transcript, clear } = speech;
 
   useEffect(() => {
-    if (speech.transcript) {
-      setCommand((prev) => `${prev}${prev ? ' ' : ''}${speech.transcript}`.trim());
-      speech.clear();
+    if (transcript) {
+      setCommand((prev) => `${prev}${prev ? ' ' : ''}${transcript}`.trim());
+      clear();
     }
-  }, [speech.clear, speech.transcript]);
+  }, [clear, transcript]);
 
   const handleRun = async () => {
     if (!command.trim() || running) {
