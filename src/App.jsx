@@ -1,48 +1,35 @@
-import { useState } from 'react'
-import './App.css'
-import Automation from './components/Automation'
-import Chat from './components/Chat'
+import { Navigate, Route, Routes } from 'react-router-dom';
+import { AuthProvider } from './context/AuthContext';
+import ProtectedRoute from './components/ProtectedRoute';
+import LoginPage from './pages/LoginPage';
+import SignupPage from './pages/SignupPage';
+import OtpLoginPage from './pages/OtpLoginPage';
+import ForgotPasswordPage from './pages/ForgotPasswordPage';
+import ResetPasswordPage from './pages/ResetPasswordPage';
+import DashboardPage from './pages/DashboardPage';
 
 function App() {
-  const [activeTab, setActiveTab] = useState('automation')
-
   return (
-    <div className="app-container">
-      <header className="app-header">
-        <div className="header-content">
-          <h1>🚀 Agent Dashboard</h1>
-          <p>Your AI-powered automation and chat assistant</p>
-        </div>
-      </header>
-
-      <nav className="app-nav">
-        <button
-          className={`nav-button ${activeTab === 'automation' ? 'active' : ''}`}
-          onClick={() => setActiveTab('automation')}
-        >
-          <span className="nav-icon">🤖</span>
-          Automation
-        </button>
-        <button
-          className={`nav-button ${activeTab === 'chat' ? 'active' : ''}`}
-          onClick={() => setActiveTab('chat')}
-        >
-          <span className="nav-icon">💬</span>
-          Chat
-        </button>
-      </nav>
-
-      <main className="app-main">
-        {activeTab === 'automation' && <Automation />}
-        {activeTab === 'chat' && <Chat />}
-      </main>
-
-      <footer className="app-footer">
-        <p>© 2026 Agent Dashboard. Powered by React + JavaScript + Vite</p>
-      </footer>
-    </div>
-  )
+    <AuthProvider>
+      <Routes>
+        <Route path="/" element={<Navigate to="/dashboard" replace />} />
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/signup" element={<SignupPage />} />
+        <Route path="/otp-login" element={<OtpLoginPage />} />
+        <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+        <Route path="/reset-password/:token" element={<ResetPasswordPage />} />
+        <Route
+          path="/dashboard"
+          element={
+            <ProtectedRoute>
+              <DashboardPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route path="*" element={<Navigate to="/dashboard" replace />} />
+      </Routes>
+    </AuthProvider>
+  );
 }
 
-export default App
-
+export default App;
