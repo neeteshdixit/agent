@@ -1,18 +1,32 @@
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? '/api';
 
 const toApiError = async (response) => {
-  let payload = {};
+  let payload = null;
+  let textPayload = '';
 
   try {
-    payload = await response.json();
+    payload = await response.clone().json();
   } catch {
-    payload = {};
+    payload = null;
   }
 
-  const message = payload.error ?? payload.message ?? `Request failed with status ${response.status}`;
+  if (!payload) {
+    try {
+      textPayload = (await response.text()).trim();
+    } catch {
+      textPayload = '';
+    }
+  }
+
+  const message =
+    (payload?.error ?? payload?.message ?? textPayload) ||
+    (response.status === 500
+      ? 'Backend is unavailable or crashed. Check backend terminal logs.'
+      : `Request failed with status ${response.status}`);
+
   const error = new Error(message);
   error.status = response.status;
-  error.details = payload.details ?? null;
+  error.details = payload?.details ?? null;
   throw error;
 };
 
