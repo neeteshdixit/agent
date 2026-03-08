@@ -1,41 +1,34 @@
 import { useState } from 'react'
 import '../styles/Automation.css'
 
-interface Automation {
-  id: string
-  name: string
-  description: string
-  status: 'idle' | 'running' | 'completed'
-}
-
 function Automation() {
-  const [automations, setAutomations] = useState<Automation[]>([
+  const [automations, setAutomations] = useState([
     { id: '1', name: 'Email Backup', description: 'Automated email backup every hour', status: 'idle' },
     { id: '2', name: 'Data Sync', description: 'Sync data across devices', status: 'idle' },
     { id: '3', name: 'Report Generation', description: 'Generate monthly reports', status: 'idle' },
   ])
   const [newAutomation, setNewAutomation] = useState('')
 
-  const runAutomation = (id: string) => {
+  const runAutomation = (id) => {
     setAutomations(prev =>
       prev.map(auto =>
-        auto.id === id ? { ...auto, status: 'running' as const } : auto
+        auto.id === id ? { ...auto, status: 'running' } : auto
       )
     )
     
     setTimeout(() => {
       setAutomations(prev =>
         prev.map(auto =>
-          auto.id === id ? { ...auto, status: 'completed' as const } : auto
+          auto.id === id ? { ...auto, status: 'completed' } : auto
         )
       )
     }, 2000)
   }
 
-  const stopAutomation = (id: string) => {
+  const stopAutomation = (id) => {
     setAutomations(prev =>
       prev.map(auto =>
-        auto.id === id ? { ...auto, status: 'idle' as const } : auto
+        auto.id === id ? { ...auto, status: 'idle' } : auto
       )
     )
   }
@@ -55,7 +48,7 @@ function Automation() {
     }
   }
 
-  const deleteAutomation = (id: string) => {
+  const deleteAutomation = (id) => {
     setAutomations(prev => prev.filter(auto => auto.id !== id))
   }
 

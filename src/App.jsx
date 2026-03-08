@@ -3,10 +3,8 @@ import './App.css'
 import Automation from './components/Automation'
 import Chat from './components/Chat'
 
-type Tab = 'automation' | 'chat'
-
 function App() {
-  const [activeTab, setActiveTab] = useState<Tab>('automation')
+  const [activeTab, setActiveTab] = useState('automation')
 
   return (
     <div className="app-container">
@@ -40,10 +38,11 @@ function App() {
       </main>
 
       <footer className="app-footer">
-        <p>© 2026 Agent Dashboard. Powered by React + TypeScript + Vite</p>
+        <p>© 2026 Agent Dashboard. Powered by React + JavaScript + Vite</p>
       </footer>
     </div>
   )
 }
 
 export default App
+

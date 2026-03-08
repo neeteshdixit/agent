@@ -1,15 +1,8 @@
 import { useState, useRef, useEffect } from 'react'
 import '../styles/Chat.css'
 
-interface Message {
-  id: string
-  text: string
-  sender: 'user' | 'agent'
-  timestamp: Date
-}
-
 function Chat() {
-  const [messages, setMessages] = useState<Message[]>([
+  const [messages, setMessages] = useState([
     {
       id: '1',
       text: 'Hello! I\'m your AI agent. How can I help you today?',
@@ -19,7 +12,7 @@ function Chat() {
   ])
   const [inputValue, setInputValue] = useState('')
   const [isLoading, setIsLoading] = useState(false)
-  const messagesEndRef = useRef<HTMLDivElement>(null)
+  const messagesEndRef = useRef(null)
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -32,7 +25,7 @@ function Chat() {
   const sendMessage = async () => {
     if (!inputValue.trim()) return
 
-    const userMessage: Message = {
+    const userMessage = {
       id: Date.now().toString(),
       text: inputValue,
       sender: 'user',
@@ -44,7 +37,7 @@ function Chat() {
     setIsLoading(true)
 
     setTimeout(() => {
-      const agentResponse: Message = {
+      const agentResponse = {
         id: (Date.now() + 1).toString(),
         text: generateAgentResponse(inputValue),
         sender: 'agent',
@@ -55,7 +48,7 @@ function Chat() {
     }, 1000)
   }
 
-  const generateAgentResponse = (userMessage: string): string => {
+  const generateAgentResponse = (userMessage) => {
     const lowerMessage = userMessage.toLowerCase()
 
     if (lowerMessage.includes('hello') || lowerMessage.includes('hi')) {
