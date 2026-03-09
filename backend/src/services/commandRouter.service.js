@@ -1,7 +1,11 @@
 import { commandParserService } from './commandParser.service.js';
 
-const getRouteType = (action) => {
-  if (action.startsWith('browser_') || action === 'send_whatsapp_web_message') {
+const getRouteType = (action, args = {}) => {
+  if (['open_browser_app', 'youtube_play', 'search_web'].includes(action)) {
+    return 'browser';
+  }
+
+  if (action === 'send_whatsapp_message' && String(args.browser ?? '').toLowerCase() === 'chrome') {
     return 'browser';
   }
 
@@ -17,7 +21,7 @@ export const commandRouterService = {
     const parsed = commandParserService.parse(command);
     return {
       ...parsed,
-      route: getRouteType(parsed.action),
+      route: getRouteType(parsed.action, parsed.args),
     };
   },
 };

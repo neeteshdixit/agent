@@ -81,6 +81,7 @@ JWT_SECRET=replace-with-a-long-random-secret
 JWT_EXPIRY=7d
 
 OPENAI_API_KEY=
+OPENAI_BASE_URL=
 OPENAI_MODEL=gpt-4.1-mini
 GOOGLE_CLIENT_ID=
 
@@ -92,6 +93,14 @@ SMTP_PASS=
 MAIL_FROM=no-reply@ai-agent.local
 
 AGENT_ARTIFACTS_DIR=./artifacts
+```
+
+Gemini via OpenAI-compatible API:
+
+```env
+OPENAI_API_KEY=AIza...
+OPENAI_BASE_URL=https://generativelanguage.googleapis.com/v1beta/openai/
+OPENAI_MODEL=gemini-2.0-flash
 ```
 
 ## Run

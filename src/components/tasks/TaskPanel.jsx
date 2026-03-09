@@ -27,7 +27,7 @@ function TaskPanel({ tasks, onRunCommand, running }) {
     <aside className="panel flex min-h-0 w-full flex-col p-4 md:w-96">
       <h2 className="text-lg font-semibold">Task Runner</h2>
       <p className="mt-1 text-xs text-zinc-400">
-        Run commands directly. Examples: Open WhatsApp, Create a document, Write mail: Hello team.
+        Run commands directly. Examples: open whatsapp installed in my pc, open whatsapp on chrome, play shape of you on youtube on chrome.
       </p>
 
       <div className="mt-4 space-y-2">

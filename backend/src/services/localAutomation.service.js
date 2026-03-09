@@ -60,6 +60,15 @@ const WINDOWS_APPS = {
   },
 };
 
+const FOLDER_PATH_RESOLVERS = {
+  downloads: () => path.join(os.homedir(), 'Downloads'),
+  documents: () => path.join(os.homedir(), 'Documents'),
+  desktop: () => path.join(os.homedir(), 'Desktop'),
+  pictures: () => path.join(os.homedir(), 'Pictures'),
+  music: () => path.join(os.homedir(), 'Music'),
+  videos: () => path.join(os.homedir(), 'Videos'),
+};
+
 const normalizeAppName = (name) => {
   const lower = name.toLowerCase();
   if (lower.includes('whatsapp')) return 'whatsapp';
@@ -72,6 +81,17 @@ const normalizeAppName = (name) => {
   if (lower.includes('spotify')) return 'spotify';
   if (lower.includes('excel')) return 'excel';
   if (lower.includes('powerpoint')) return 'powerpoint';
+  return null;
+};
+
+const normalizeFolderName = (name) => {
+  const lower = String(name).toLowerCase();
+  if (/\b(downloads?|download folder)\b/i.test(lower)) return 'downloads';
+  if (/\b(documents?|docs?)\b/i.test(lower)) return 'documents';
+  if (/\b(desktop)\b/i.test(lower)) return 'desktop';
+  if (/\b(pictures?|photos?|images?)\b/i.test(lower)) return 'pictures';
+  if (/\b(music|songs?)\b/i.test(lower)) return 'music';
+  if (/\b(videos?|movies?)\b/i.test(lower)) return 'videos';
   return null;
 };
 
@@ -165,6 +185,39 @@ export const localAutomationService = {
         path: downloadsPath,
       },
     };
+  },
+
+  openKnownFolder: async ({ folder }) => {
+    const folderKey = normalizeFolderName(folder);
+    if (!folderKey) {
+      return {
+        status: 'blocked',
+        result: {
+          message: `Folder "${folder}" is not in the safe allow-list.`,
+        },
+      };
+    }
+
+    const folderPath = FOLDER_PATH_RESOLVERS[folderKey]();
+
+    try {
+      await fs.access(folderPath);
+      await open(folderPath);
+      return {
+        status: 'completed',
+        result: {
+          message: `${folderKey[0].toUpperCase()}${folderKey.slice(1)} folder opened successfully.`,
+          path: folderPath,
+        },
+      };
+    } catch {
+      return {
+        status: 'failed',
+        result: {
+          message: `Could not open ${folderKey} folder on this computer.`,
+        },
+      };
+    }
   },
 
   playMusic: async ({ songPath }) => {

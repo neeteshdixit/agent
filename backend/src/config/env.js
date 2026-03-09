@@ -42,6 +42,7 @@ export const env = {
   jwtSecret: process.env.JWT_SECRET ?? 'change-this-secret-in-production',
   jwtExpiry: process.env.JWT_EXPIRY ?? '7d',
   openaiApiKey: process.env.OPENAI_API_KEY ?? '',
+  openaiBaseUrl: process.env.OPENAI_BASE_URL ?? '',
   openaiModel: process.env.OPENAI_MODEL ?? 'gpt-4.1-mini',
   googleClientId: process.env.GOOGLE_CLIENT_ID ?? '',
   smtpHost: process.env.SMTP_HOST ?? '',

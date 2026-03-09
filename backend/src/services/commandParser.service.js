@@ -2,8 +2,11 @@ const EMAIL_REGEX = /([A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,})/i;
 
 const cleanText = (value) => value.replace(/\s+/g, ' ').trim();
 
+const normalizeEmailMarkup = (value) =>
+  value.replace(/\[([^\]]+@[^\]]+)\]\(mailto:[^)]+\)/gi, '$1');
+
 const containsLocalPreference = (text) =>
-  /(installed in my pc|installed on my pc|desktop app|local app|in my pc|on my pc|on computer)/i.test(
+  /(installed in my pc|installed on my pc|desktop app|local app|in my pc|on my pc|on computer|installed)/i.test(
     text,
   );
 
@@ -18,7 +21,6 @@ const extractSearchQuery = (original) => {
 
   return cleanText(
     fromSearch
-      .replace(/\bon youtube\b.*$/i, '')
       .replace(/\bon chrome\b.*$/i, '')
       .replace(/\bin chrome\b.*$/i, ''),
   );
@@ -50,15 +52,19 @@ const parseOpenAppIntent = (text) => {
     openMatch[1]
       .replace(/\bin\b.*$/i, '')
       .replace(/\bon\b.*$/i, '')
+      .replace(/\bfolder\b.*$/i, '')
       .replace(/\bmy pc\b/gi, '')
       .replace(/\bcomputer\b/gi, '')
-      .replace(/\bsoftware\b/gi, ''),
+      .replace(/\bsoftware\b/gi, '')
+      .replace(/\binstalled\b/gi, '')
+      .replace(/\bapp\b/gi, ''),
   );
 
   return appName || null;
 };
 
-const parseEmailCommand = (original) => {
+const parseEmailCommand = (rawOriginal) => {
+  const original = normalizeEmailMarkup(rawOriginal);
   const email = original.match(EMAIL_REGEX)?.[1];
   if (!email) {
     return null;
@@ -68,15 +74,15 @@ const parseEmailCommand = (original) => {
     /send\s+(?:mail|email)\s+to\s+[^\s]+\s+(?:saying|say|message|body)\s+(.+)$/i,
   )?.[1];
   if (explicitBody) {
-    return { to: email, body: cleanText(explicitBody), subject: 'Message from AI Assistant' };
+    return { to: email, message: cleanText(explicitBody) };
   }
 
   const bodyBeforeTo = original.match(/send\s+(?:mail|email)\s+(.+?)\s+to\s+[^\s]+/i)?.[1];
   if (bodyBeforeTo) {
-    return { to: email, body: cleanText(bodyBeforeTo), subject: 'Message from AI Assistant' };
+    return { to: email, message: cleanText(bodyBeforeTo) };
   }
 
-  return { to: email, body: 'Hello', subject: 'Message from AI Assistant' };
+  return { to: email, message: 'Hello' };
 };
 
 const parseWhatsAppMessagePayload = (original) => {
@@ -125,8 +131,29 @@ const isWhatsAppMessageCommand = (text) =>
   /send\s+(?:a\s+)?(?:whatsapp\s+)?(?:message\s+)?to/i.test(text) ||
   /open\s+whatsapp.*send\s+message\s+to/i.test(text);
 
-const isMailCommand = (text) =>
-  /send\s+mail/i.test(text) || /send\s+email/i.test(text);
+const isMailCommand = (text) => /send\s+mail/i.test(text) || /send\s+email/i.test(text);
+
+const parseFolderIntent = (text) => {
+  if (!/(open|show)/i.test(text)) {
+    return null;
+  }
+
+  if (/\b(downloads?|download folder)\b/i.test(text)) return 'downloads';
+  if (/\b(documents?|docs?)\b/i.test(text)) return 'documents';
+  if (/\b(desktop)\b/i.test(text)) return 'desktop';
+  if (/\b(pictures?|photos?|images?)\b/i.test(text)) return 'pictures';
+  if (/\b(music|songs?)\b/i.test(text)) return 'music';
+  if (/\b(videos?|movies?)\b/i.test(text)) return 'videos';
+
+  return null;
+};
+
+const inferBrowserApp = (text) => {
+  if (text.includes('whatsapp')) return 'whatsapp_web';
+  if (text.includes('youtube')) return 'youtube';
+  if (text.includes('gmail') || text.includes('mail')) return 'gmail';
+  return '';
+};
 
 export const commandParserService = {
   parse: (command) => {
@@ -144,53 +171,41 @@ export const commandParserService = {
 
     if (isWhatsAppMessageCommand(text)) {
       const payload = parseWhatsAppMessagePayload(original) ?? { contact: '', message: '' };
-      if (chromePreference && !localPreference) {
-        return {
-          action: 'send_whatsapp_web_message',
-          args: payload,
-          source: 'parser',
-        };
-      }
-
       return {
         action: 'send_whatsapp_message',
-        args: payload,
+        args: {
+          contact: payload.contact ?? '',
+          message: payload.message ?? '',
+          ...(chromePreference ? { browser: 'chrome' } : {}),
+        },
         source: 'parser',
       };
     }
 
     if (isMailCommand(text)) {
-      const payload = parseEmailCommand(original) ?? { to: undefined, body: 'Hello', subject: 'Message from AI Assistant' };
+      const payload = parseEmailCommand(original) ?? { to: '', message: '' };
       return {
-        action: 'send_mail',
-        args: payload,
-        source: 'parser',
-      };
-    }
-
-    if (searchIntent && youtubeIntent) {
-      return {
-        action: 'browser_search_youtube',
+        action: 'send_email',
         args: {
-          query: extractSearchQuery(original) || 'latest tutorials',
+          to: payload.to ?? '',
+          message: payload.message ?? '',
         },
         source: 'parser',
       };
     }
 
-    if (playIntent && (youtubeIntent || chromePreference)) {
+    const folder = parseFolderIntent(text);
+    if (folder) {
       return {
-        action: 'browser_play_youtube',
-        args: {
-          query: extractPlayQuery(original) || 'top songs',
-        },
+        action: 'open_folder',
+        args: { folder },
         source: 'parser',
       };
     }
 
     if (searchIntent) {
       return {
-        action: 'browser_google_search',
+        action: 'search_web',
         args: {
           query: extractSearchQuery(original) || original,
         },
@@ -198,75 +213,50 @@ export const commandParserService = {
       };
     }
 
-    if (text.includes('open') && text.includes('youtube')) {
-      return { action: 'browser_open_youtube', args: {}, source: 'parser' };
-    }
-
-    if (text.includes('open') && text.includes('gmail')) {
-      return { action: 'browser_open_gmail', args: {}, source: 'parser' };
-    }
-
-    if (text.includes('open') && text.includes('whatsapp')) {
-      if (chromePreference && !localPreference) {
-        return { action: 'browser_open_whatsapp_web', args: {}, source: 'parser' };
-      }
-      return { action: 'open_whatsapp', args: {}, source: 'parser' };
-    }
-
-    if (text.includes('open') && (text.includes('word') || text.includes('microsoft word'))) {
-      return { action: 'open_word', args: {}, source: 'parser' };
-    }
-
-    if (text.includes('open') && text.includes('chrome')) {
-      return { action: 'open_chrome', args: {}, source: 'parser' };
-    }
-
-    if (
-      (text.includes('open') || text.includes('show')) &&
-      (text.includes('downloads') || text.includes('download folder'))
-    ) {
-      return { action: 'open_folder_downloads', args: {}, source: 'parser' };
-    }
-
-    if (text.includes('play') && (text.includes('song') || text.includes('music'))) {
-      if (chromePreference) {
-        return {
-          action: 'browser_play_youtube',
-          args: {
-            query: extractPlayQuery(original) || 'top songs',
-          },
-          source: 'parser',
-        };
-      }
-      return { action: 'play_music', args: {}, source: 'parser' };
-    }
-
-    if (text.includes('create') && text.includes('document')) {
-      return { action: 'create_document', args: { title: 'new-document' }, source: 'parser' };
-    }
-
-    if (text.includes('write mail') || text.includes('compose mail')) {
-      const email = original.match(EMAIL_REGEX)?.[1];
-      const body = original.match(/(?:saying|say|message|body)\s+(.+)$/i)?.[1] || 'Hello';
+    if (playIntent && (youtubeIntent || chromePreference)) {
       return {
-        action: 'compose_email',
+        action: 'youtube_play',
         args: {
-          to: email,
-          body: cleanText(body),
-          subject: 'Draft from AI Assistant',
+          query: extractPlayQuery(original) || 'top songs',
+          browser: 'chrome',
         },
         source: 'parser',
       };
     }
 
-    if (text.startsWith('open ')) {
-      const appName = parseOpenAppIntent(original);
-      if (appName) {
-        if (chromePreference && !localPreference) {
-          return { action: 'browser_google_search', args: { query: appName }, source: 'parser' };
-        }
-        return { action: 'open_app', args: { appName }, source: 'parser' };
+    if (playIntent && /\b(play music|play a song|play song)\b/i.test(text)) {
+      return { action: 'play_music', args: {}, source: 'parser' };
+    }
+
+    if (text.includes('open')) {
+      const browserApp = inferBrowserApp(text);
+      if (
+        browserApp &&
+        ((browserApp === 'whatsapp_web' && chromePreference && !localPreference) ||
+          browserApp !== 'whatsapp_web')
+      ) {
+        return {
+          action: 'open_browser_app',
+          args: {
+            app: browserApp,
+            browser: 'chrome',
+          },
+          source: 'parser',
+        };
       }
+
+      const app = parseOpenAppIntent(original);
+      if (app) {
+        return {
+          action: 'open_local_app',
+          args: { app },
+          source: 'parser',
+        };
+      }
+    }
+
+    if (playIntent) {
+      return { action: 'play_music', args: {}, source: 'parser' };
     }
 
     return { action: 'chat_only', args: {}, source: 'parser' };

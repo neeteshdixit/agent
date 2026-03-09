@@ -15,6 +15,23 @@
 
 On startup the backend initializes required tables automatically.
 
+## LLM Provider Setup
+
+Default (OpenAI):
+
+```env
+OPENAI_API_KEY=sk-...
+OPENAI_MODEL=gpt-4.1-mini
+```
+
+Gemini (OpenAI-compatible endpoint):
+
+```env
+OPENAI_API_KEY=AIza...
+OPENAI_BASE_URL=https://generativelanguage.googleapis.com/v1beta/openai/
+OPENAI_MODEL=gemini-2.0-flash
+```
+
 ## API modules
 
 - `POST /api/auth/signup`
@@ -37,19 +54,14 @@ On startup the backend initializes required tables automatically.
 
 Supported command examples:
 
-- `open whatsapp`
-- `open installed whatsapp in my pc`
+- `open whatsapp installed in my pc`
 - `open whatsapp on chrome`
-- `open word`
-- `open chrome`
+- `play shape of you on youtube on chrome`
+- `send mail hello baby to someone@example.com`
+- `send whatsapp message to HR maam hello baby how are you`
 - `open downloads folder`
 - `play music`
-- `play shape of you on youtube on chrome`
-- `search ai tutorials on youtube`
-- `send email to someone@example.com saying hello`
-- `send mail hello baby to someone@example.com`
-- `send whatsapp message to HR maam saying hello baby`
-- `send whatsapp message to HR maam on chrome saying hello baby`
+- `search best ai tools`
 
 For reliable WhatsApp Desktop sending:
 - Use phone number directly: `send whatsapp message to +919876543210 saying hello`
