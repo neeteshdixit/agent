@@ -17,6 +17,15 @@ const resolveArtifactsDir = () => {
   return path.resolve(process.cwd(), 'artifacts');
 };
 
+const resolveCommandCatalogPath = () => {
+  const configured = process.env.COMMAND_CATALOG_PATH;
+  if (configured) {
+    return path.resolve(configured);
+  }
+
+  return path.resolve(backendRoot, 'data', 'commands.catalog.json');
+};
+
 const parseJsonObjectEnv = (rawValue, fallback = {}) => {
   if (!rawValue) {
     return fallback;
@@ -53,4 +62,5 @@ export const env = {
   mailFrom: process.env.MAIL_FROM ?? 'no-reply@ai-agent.local',
   whatsappContacts: parseJsonObjectEnv(process.env.WHATSAPP_CONTACTS_JSON, {}),
   agentArtifactsDir: resolveArtifactsDir(),
+  commandCatalogPath: resolveCommandCatalogPath(),
 };

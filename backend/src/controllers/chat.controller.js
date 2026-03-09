@@ -82,7 +82,10 @@ export const sendMessage = async (req, res) => {
   let task = null;
 
   if (agentMode) {
-    const agentResult = await agentService.runCommand({ command: message });
+    const agentResult = await agentService.runCommand({
+      userId: req.user.id,
+      command: message,
+    });
     assistantContent = agentResult.assistantMessage;
     task = {
       action: agentResult.interpreted.action,

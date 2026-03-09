@@ -54,6 +54,44 @@ const schemaQueries = [
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
   )`,
   `CREATE INDEX IF NOT EXISTS task_logs_user_idx ON task_logs(user_id, created_at DESC)`,
+  `ALTER TABLE task_logs DROP CONSTRAINT IF EXISTS task_logs_status_check`,
+  `ALTER TABLE task_logs
+   ADD CONSTRAINT task_logs_status_check
+   CHECK (status IN ('completed', 'failed', 'blocked', 'waiting'))`,
+  `CREATE TABLE IF NOT EXISTS task_history (
+    id TEXT PRIMARY KEY,
+    user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    command TEXT NOT NULL,
+    normalized_command TEXT NOT NULL,
+    action TEXT NOT NULL DEFAULT '',
+    parameters JSONB NOT NULL DEFAULT '{}'::jsonb,
+    status VARCHAR(16) NOT NULL CHECK (status IN ('success', 'failed', 'pending')),
+    error_message TEXT,
+    failure_reason VARCHAR(80),
+    retry_after TIMESTAMPTZ,
+    attempts INTEGER NOT NULL DEFAULT 1,
+    suggestion JSONB,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+  )`,
+  `CREATE INDEX IF NOT EXISTS task_history_user_command_idx
+   ON task_history(user_id, normalized_command, created_at DESC)`,
+  `CREATE INDEX IF NOT EXISTS task_history_retry_after_idx
+   ON task_history(user_id, retry_after DESC)`,
+  `CREATE TABLE IF NOT EXISTS command_learning_examples (
+    id TEXT PRIMARY KEY,
+    user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    instruction TEXT NOT NULL,
+    normalized_instruction TEXT NOT NULL,
+    action TEXT NOT NULL,
+    parameters JSONB NOT NULL DEFAULT '{}'::jsonb,
+    source VARCHAR(24) NOT NULL CHECK (source IN ('success', 'correction', 'manual')),
+    usage_count INTEGER NOT NULL DEFAULT 0,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    UNIQUE (user_id, normalized_instruction)
+  )`,
+  `CREATE INDEX IF NOT EXISTS command_learning_user_idx
+   ON command_learning_examples(user_id, updated_at DESC)`,
 ];
 
 export const connectDb = async () => {

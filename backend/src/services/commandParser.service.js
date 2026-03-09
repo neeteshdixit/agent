@@ -13,17 +13,23 @@ const containsLocalPreference = (text) =>
 const containsChromePreference = (text) =>
   /\b(on chrome|in chrome|using chrome|chrome browser)\b/i.test(text);
 
+const stripBrowserHints = (value) =>
+  cleanText(
+    value
+      .replace(/\bon youtube\b/gi, '')
+      .replace(/\bin youtube\b/gi, '')
+      .replace(/\bon chrome\b/gi, '')
+      .replace(/\bin chrome\b/gi, '')
+      .replace(/\busing chrome\b/gi, ''),
+  );
+
 const extractSearchQuery = (original) => {
   const fromSearch = original.match(/\bsearch\s+(.+)$/i)?.[1];
   if (!fromSearch) {
     return '';
   }
 
-  return cleanText(
-    fromSearch
-      .replace(/\bon chrome\b.*$/i, '')
-      .replace(/\bin chrome\b.*$/i, ''),
-  );
+  return stripBrowserHints(fromSearch);
 };
 
 const extractPlayQuery = (original) => {
@@ -32,13 +38,28 @@ const extractPlayQuery = (original) => {
     return '';
   }
 
-  return cleanText(
+  return stripBrowserHints(
     fromPlay
-      .replace(/\bon youtube\b.*$/i, '')
-      .replace(/\bon chrome\b.*$/i, '')
-      .replace(/\bin chrome\b.*$/i, '')
       .replace(/\bsong\b/gi, '')
       .replace(/\bmusic\b/gi, ''),
+  );
+};
+
+const extractPlaylistQuery = (original) => {
+  const fromOpenPlaylist =
+    original.match(/\bopen\s+playlist(?:\s+of|\s+for)?\s+(.+)$/i)?.[1] ??
+    original.match(/\bplaylist(?:\s+of|\s+for)?\s+(.+)$/i)?.[1];
+
+  if (!fromOpenPlaylist) {
+    return '';
+  }
+
+  return stripBrowserHints(
+    fromOpenPlaylist
+      .replace(/\bany\s+youtuber\b/gi, 'youtube')
+      .replace(/\bany\s+channel\b/gi, 'youtube')
+      .replace(/\byoutuber\b/gi, '')
+      .replace(/\bchannel\b/gi, ''),
   );
 };
 
@@ -163,7 +184,8 @@ export const commandParserService = {
     const chromePreference = containsChromePreference(text);
     const youtubeIntent = text.includes('youtube');
     const searchIntent = text.includes('search');
-    const playIntent = text.includes('play');
+    const playIntent = /\bplay\b/i.test(text);
+    const playlistIntent = /\bplaylist\b/i.test(text);
 
     if (!text) {
       return { action: 'chat_only', args: {}, source: 'parser' };
@@ -203,6 +225,19 @@ export const commandParserService = {
       };
     }
 
+    if (playlistIntent && !text.includes('folder')) {
+      const query = extractPlaylistQuery(original) || 'youtube playlist';
+      const playlistQuery = /\bplaylist\b/i.test(query) ? query : `${query} playlist`;
+      return {
+        action: 'youtube_play',
+        args: {
+          query: playlistQuery,
+          browser: 'chrome',
+        },
+        source: 'parser',
+      };
+    }
+
     if (searchIntent) {
       return {
         action: 'search_web',
@@ -217,7 +252,7 @@ export const commandParserService = {
       return {
         action: 'youtube_play',
         args: {
-          query: extractPlayQuery(original) || 'top songs',
+          query: extractPlayQuery(original) || 'music',
           browser: 'chrome',
         },
         source: 'parser',

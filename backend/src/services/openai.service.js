@@ -297,6 +297,10 @@ export const openaiService = {
   interpretTaskCommand: async ({ command }) => {
     const parsedByRule = commandRouterService.route(command);
 
+    if (parsedByRule.source === 'catalog') {
+      return parsedByRule;
+    }
+
     if (!client && parsedByRule.action !== 'chat_only') {
       return parsedByRule;
     }
@@ -331,6 +335,12 @@ Supported actions and required parameters:
 - search_web: query
 - open_folder: folder
 - play_music: no parameters
+
+For playlist/channel requests (example: "open playlist of Arijit Singh on youtube"):
+- use action: youtube_play
+- set browser: "chrome"
+- set query to include playlist intent (example: "Arijit Singh playlist")
+- do not replace user query with generic text like "top songs"
 
 If the instruction does not match an executable action, return:
 {"action":"chat_only"}

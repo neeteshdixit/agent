@@ -63,6 +63,27 @@ Supported command examples:
 - `play music`
 - `search best ai tools`
 
+## Command Catalog (500,000 commands JSON)
+
+Generate a large command catalog JSON and enable catalog-first routing:
+
+```bash
+npm run commands:generate
+```
+
+The generator creates `backend/data/commands.catalog.json` with 500,000 command entries by default.
+You can override path with:
+
+```env
+COMMAND_CATALOG_PATH=./backend/data/commands.catalog.json
+```
+
+Routing order:
+
+1. Exact match in command catalog JSON
+2. Existing rule-based parser
+3. LLM parser fallback (if configured)
+
 For reliable WhatsApp Desktop sending:
 - Use phone number directly: `send whatsapp message to +919876543210 saying hello`
 - Or set contact mapping in `.env`:

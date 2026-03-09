@@ -3,7 +3,10 @@ import { taskRepository } from '../repositories/task.repository.js';
 
 export const runTask = async (req, res) => {
   const { command } = req.validatedBody;
-  const agentResult = await agentService.runCommand({ command });
+  const agentResult = await agentService.runCommand({
+    userId: req.user.id,
+    command,
+  });
 
   const log = await taskRepository.create({
     userId: req.user.id,

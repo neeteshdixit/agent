@@ -131,9 +131,25 @@ export const taskExecutorService = {
           });
         }
 
+        const isPlaylistOrChannelRequest =
+          /\bplaylist\b/i.test(query) || /\byoutuber\b/i.test(query) || /\bchannel\b/i.test(query);
+
         progress.push('Launching Chrome');
         progress.push('Opening YouTube');
         progress.push(`Searching "${query}"`);
+
+        if (isPlaylistOrChannelRequest) {
+          progress.push('Showing playlist results');
+          const execution = await safeExecute(
+            () =>
+              browserAutomationService.youtubeSearch({
+                query,
+              }),
+            'Failed to open YouTube playlist results in Chrome.',
+          );
+          return withStep(execution.status, execution.result);
+        }
+
         progress.push('Playing first result');
         const execution = await safeExecute(
           () =>

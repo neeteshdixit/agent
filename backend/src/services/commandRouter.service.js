@@ -1,4 +1,5 @@
 import { commandParserService } from './commandParser.service.js';
+import { commandCatalogService } from './commandCatalog.service.js';
 
 const getRouteType = (action, args = {}) => {
   if (['open_browser_app', 'youtube_play', 'search_web'].includes(action)) {
@@ -18,6 +19,15 @@ const getRouteType = (action, args = {}) => {
 
 export const commandRouterService = {
   route: (command) => {
+    const catalogMatch = commandCatalogService.match(command);
+    if (catalogMatch) {
+      return {
+        ...catalogMatch,
+        source: 'catalog',
+        route: getRouteType(catalogMatch.action, catalogMatch.args),
+      };
+    }
+
     const parsed = commandParserService.parse(command);
     return {
       ...parsed,
