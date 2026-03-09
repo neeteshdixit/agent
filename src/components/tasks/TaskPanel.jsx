@@ -72,7 +72,20 @@ function TaskPanel({ tasks, onRunCommand, running }) {
               <article key={task.id} className="rounded-lg border border-zinc-800 bg-zinc-900 p-3 text-xs">
                 <p className="font-medium text-zinc-100">{task.command}</p>
                 <p className="mt-1 text-zinc-400">
-                  {task.action} • <span className="uppercase">{task.status}</span>
+                  {task.action} -{' '}
+                  <span
+                    className={`uppercase ${
+                      task.status === 'completed'
+                        ? 'text-emerald-300'
+                        : task.status === 'waiting'
+                          ? 'text-amber-300'
+                          : task.status === 'failed'
+                            ? 'text-red-300'
+                            : 'text-zinc-300'
+                    }`}
+                  >
+                    {task.status}
+                  </span>
                 </p>
                 {Array.isArray(task.progress) && task.progress.length > 0 ? (
                   <ul className="mt-2 list-disc space-y-1 pl-4 text-zinc-400">
@@ -82,6 +95,14 @@ function TaskPanel({ tasks, onRunCommand, running }) {
                   </ul>
                 ) : null}
                 {task.result?.message ? <p className="mt-2 text-zinc-300">{task.result.message}</p> : null}
+                {task.result?.retryAfter ? (
+                  <p className="mt-2 text-amber-300">
+                    Retry after: {new Date(task.result.retryAfter).toLocaleString()}
+                  </p>
+                ) : null}
+                {task.result?.suggestion?.action ? (
+                  <p className="mt-2 text-sky-300">Suggested fallback: {task.result.suggestion.action}</p>
+                ) : null}
               </article>
             ))
           )}

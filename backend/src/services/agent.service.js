@@ -4,8 +4,9 @@ import { taskFeedbackService } from './taskFeedback.service.js';
 
 export const agentService = {
   runCommand: async ({ userId, command }) => {
+    const learned = await taskFeedbackService.resolveLearnedCommand({ userId, command });
     const retryState = await taskFeedbackService.checkRetryWindow({ userId, command });
-    if (!retryState.canRetry) {
+    if (!retryState.canRetry && !learned) {
       const waitingExecution = taskFeedbackService.buildWaitingExecution({
         retryAfter: retryState.retryAfter,
       });
@@ -32,8 +33,11 @@ export const agentService = {
       };
     }
 
-    const learned = await taskFeedbackService.resolveLearnedCommand({ userId, command });
     const interpreted = learned ?? (await openaiService.interpretTaskCommand({ command }));
+    const attemptNumber =
+      retryState.canRetry
+        ? retryState.attempts
+        : Math.max(1, Number(retryState.attempts ?? 1) + 1);
 
     const execution = await taskExecutorService.execute({
       action: interpreted.action,
@@ -47,7 +51,7 @@ export const agentService = {
       normalizedCommand: retryState.normalizedCommand,
       interpreted,
       execution,
-      attempts: retryState.attempts,
+      attempts: attemptNumber,
     });
 
     return {

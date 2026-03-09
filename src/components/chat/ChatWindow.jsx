@@ -66,7 +66,7 @@ function ChatWindow({ messages, onSendMessage, loading, agentMode, onToggleAgent
         )}
         {loading ? (
           <div className="text-sm text-zinc-400">
-            Assistant is thinking...
+            {agentMode ? 'Executing task and updating learning memory...' : 'Assistant is thinking...'}
           </div>
         ) : null}
         <div ref={bottomRef} />

@@ -84,6 +84,40 @@ Routing order:
 2. Existing rule-based parser
 3. LLM parser fallback (if configured)
 
+## Reinforcement-Style Feedback Learning
+
+The backend now includes a learning loop that improves command execution over time.
+
+Flow:
+
+1. Command received
+2. Learned mapping lookup
+3. Dataset/parser/LLM interpretation
+4. Task execution
+5. Task history logging
+6. Success/failure feedback updates
+7. Future commands use improved mappings
+
+### New persistence tables
+
+- `task_history`: command execution memory with `status`, `error_message`, `retry_after`, `attempts`, and failure suggestions.
+- `command_learning_examples`: learned instruction-to-action mappings from successful runs and user corrections.
+
+### Retry and cooldown behavior
+
+- On failure, system stores the failure and sets `retry_after = now + 1 hour`.
+- Repeating the same command before `retry_after` returns `status: waiting`.
+- After 3 failed attempts, cooldown message is returned: task cannot be executed now; retry in 1 hour.
+
+### Automatic learning updates
+
+- On successful execution, the command is saved as a new learned dataset example.
+- If a prior failed command appears corrected by a later successful command, the failed instruction is mapped to the corrected action automatically.
+
+### Failure analysis suggestions
+
+For repeated failures, system suggests safer alternatives (for example, fallback to WhatsApp Web in Chrome when desktop WhatsApp is unavailable).
+
 For reliable WhatsApp Desktop sending:
 - Use phone number directly: `send whatsapp message to +919876543210 saying hello`
 - Or set contact mapping in `.env`:

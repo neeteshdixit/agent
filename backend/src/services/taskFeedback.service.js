@@ -228,7 +228,12 @@ export const taskFeedbackService = {
       : null;
 
     const retryAfter = parseDate(latest?.retryAfter);
-    if (retryAfter && retryAfter.getTime() > Date.now()) {
+    if (
+      retryAfter &&
+      retryAfter.getTime() > Date.now() &&
+      latest?.status === 'failed' &&
+      latest?.action !== 'chat_only'
+    ) {
       return {
         canRetry: false,
         normalizedCommand,
@@ -239,7 +244,7 @@ export const taskFeedbackService = {
     }
 
     let attempts = 1;
-    if (latest?.status === 'failed') {
+    if (latest?.status === 'failed' && latest?.action !== 'chat_only') {
       attempts = Math.max(1, Number(latest.attempts ?? 1) + 1);
     }
 
@@ -291,6 +296,33 @@ export const taskFeedbackService = {
     execution,
     attempts,
   }) => {
+    if (interpreted.action === 'chat_only') {
+      await taskHistoryRepository.create({
+        userId,
+        command,
+        normalizedCommand,
+        action: interpreted.action,
+        parameters: {},
+        status: 'pending',
+        errorMessage: execution.result?.message ?? 'Instruction mapped to chat mode only.',
+        failureReason: 'non_executable_instruction',
+        attempts: 1,
+      });
+
+      return {
+        execution: {
+          ...execution,
+          progress: [
+            ...(execution.progress ?? []),
+            'Stored as non-executable instruction for audit',
+          ],
+        },
+        assistantMessage:
+          execution.result?.message ??
+          'This instruction does not map to an executable local task.',
+      };
+    }
+
     if (execution.status === 'completed') {
       await taskHistoryRepository.create({
         userId,
@@ -302,14 +334,16 @@ export const taskFeedbackService = {
         attempts: 1,
       });
 
-      await commandLearningRepository.upsertMapping({
-        userId,
-        instruction: command,
-        normalizedInstruction: normalizedCommand,
-        action: interpreted.action,
-        parameters: interpreted.args ?? {},
-        source: 'success',
-      });
+      if (interpreted.action !== 'chat_only') {
+        await commandLearningRepository.upsertMapping({
+          userId,
+          instruction: command,
+          normalizedInstruction: normalizedCommand,
+          action: interpreted.action,
+          parameters: interpreted.args ?? {},
+          source: 'success',
+        });
+      }
 
       const failureCandidate = await taskHistoryRepository.findLatestFailedCandidate({
         userId,

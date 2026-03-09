@@ -96,7 +96,7 @@ export const taskHistoryRepository = {
        WHERE user_id = $1
          AND status = 'failed'
          AND normalized_command <> $2
-         AND created_at >= NOW() - make_interval(hours => $3::int)
+         AND created_at >= NOW() - ($3 * INTERVAL '1 hour')
        ORDER BY created_at DESC
        LIMIT 1`,
       [userId, excludeNormalizedCommand, withinHours],
