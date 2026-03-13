@@ -105,6 +105,19 @@ OPENAI_MODEL=gemini-2.0-flash
 
 ## Run
 
+Prerequisites:
+
+- Node.js 20+ and npm
+- PostgreSQL 14+ running locally
+- Google Chrome (required for browser automation commands)
+
+Setup:
+
+```bash
+cp .env.example .env
+cp backend/.env.example backend/.env
+```
+
 Frontend:
 
 ```bash
@@ -121,3 +134,8 @@ npm run dev
 ```
 
 The backend auto-creates required PostgreSQL tables at startup.
+
+If Node is not installed, install it first:
+
+- Windows: https://nodejs.org/
+- Verify: `node -v` and `npm -v`

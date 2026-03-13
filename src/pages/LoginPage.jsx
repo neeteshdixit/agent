@@ -42,20 +42,23 @@ function LoginPage() {
         return;
       }
 
+      const target = document.getElementById('google-signin-btn');
+      if (!target) {
+        return;
+      }
+
       window.google.accounts.id.initialize({
         client_id: googleClientId,
         callback: onGoogleCredential,
       });
 
-      window.google.accounts.id.renderButton(
-        document.getElementById('google-signin-btn'),
-        {
-          theme: 'outline',
-          size: 'large',
-          text: 'continue_with',
-          width: 320,
-        },
-      );
+      target.innerHTML = '';
+      window.google.accounts.id.renderButton(target, {
+        theme: 'outline',
+        size: 'large',
+        text: 'continue_with',
+        width: 320,
+      });
       setGoogleReady(true);
     };
 
@@ -71,6 +74,7 @@ function LoginPage() {
     script.async = true;
     script.defer = true;
     script.onload = setupGoogleButton;
+    script.onerror = () => setGoogleReady(false);
     document.body.appendChild(script);
 
     return () => {};
