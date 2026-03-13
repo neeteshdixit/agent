@@ -62,6 +62,10 @@ function DashboardPage() {
 
         if (sessionList.length > 0) {
           await loadSession(sessionList[0].id);
+        } else {
+          setActiveSessionId('');
+          setMessages([]);
+          setAgentMode(false);
         }
       } catch (requestError) {
         if (mounted) {
@@ -141,6 +145,7 @@ function DashboardPage() {
 
       setMessages(response.messages);
       const updatedSessions = await refreshSessions();
+      setSessions(updatedSessions);
       if (!activeSessionId && response.sessionId) {
         setActiveSessionId(response.sessionId);
       }
@@ -160,9 +165,6 @@ function DashboardPage() {
         ]);
       }
 
-      if (!activeSessionId && updatedSessions.length > 0) {
-        setSessions(updatedSessions);
-      }
     } catch (requestError) {
       setError(requestError.message);
       setMessages((prev) => prev.filter((item) => item._id !== optimistic._id));
