@@ -10,12 +10,15 @@ const mapUser = (row) => {
     id: row.id,
     name: row.name,
     email: row.email,
+    phone: row.phone,
     passwordHash: row.password_hash,
     googleId: row.google_id,
     otpCodeHash: row.otp_code_hash,
     otpExpiresAt: row.otp_expires_at,
     resetTokenHash: row.reset_token_hash,
     resetTokenExpiresAt: row.reset_token_expires_at,
+    phoneVerifiedAt: row.phone_verified_at,
+    emailVerifiedAt: row.email_verified_at,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
@@ -26,6 +29,11 @@ const createId = () => crypto.randomUUID();
 export const userRepository = {
   findByEmail: async (email) => {
     const result = await query(`SELECT * FROM users WHERE email = $1 LIMIT 1`, [email.toLowerCase()]);
+    return mapUser(result.rows[0]);
+  },
+
+  findByPhone: async (phone) => {
+    const result = await query(`SELECT * FROM users WHERE phone = $1 LIMIT 1`, [phone]);
     return mapUser(result.rows[0]);
   },
 
@@ -46,14 +54,31 @@ export const userRepository = {
     return mapUser(result.rows[0]);
   },
 
-  create: async ({ name, email, passwordHash = null, googleId = null }) => {
+  create: async ({
+    name,
+    email,
+    phone = null,
+    passwordHash = null,
+    googleId = null,
+    phoneVerifiedAt = null,
+    emailVerifiedAt = null,
+  }) => {
     const id = createId();
     const result = await query(
       `INSERT INTO users (
-        id, name, email, password_hash, google_id, created_at, updated_at
-      ) VALUES ($1, $2, $3, $4, $5, NOW(), NOW())
+        id,
+        name,
+        email,
+        phone,
+        password_hash,
+        google_id,
+        phone_verified_at,
+        email_verified_at,
+        created_at,
+        updated_at
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW(), NOW())
       RETURNING *`,
-      [id, name, email.toLowerCase(), passwordHash, googleId],
+      [id, name, email.toLowerCase(), phone, passwordHash, googleId, phoneVerifiedAt, emailVerifiedAt],
     );
     return mapUser(result.rows[0]);
   },

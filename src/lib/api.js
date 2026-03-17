@@ -54,6 +54,9 @@ export const apiRequest = async (path, { method = 'GET', body, token, headers } 
 
 export const endpoints = {
   signup: (payload) => apiRequest('/auth/signup', { method: 'POST', body: payload }),
+  verifySignupPhoneOtp: (payload) => apiRequest('/auth/signup/verify-phone', { method: 'POST', body: payload }),
+  verifySignupEmailOtp: (payload) => apiRequest('/auth/signup/verify-email', { method: 'POST', body: payload }),
+  resendSignupOtp: (payload) => apiRequest('/auth/signup/resend-otp', { method: 'POST', body: payload }),
   login: (payload) => apiRequest('/auth/login', { method: 'POST', body: payload }),
   loginWithGoogle: (payload) => apiRequest('/auth/google', { method: 'POST', body: payload }),
   requestOtp: (payload) => apiRequest('/auth/otp/request', { method: 'POST', body: payload }),

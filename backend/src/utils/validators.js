@@ -1,6 +1,10 @@
 import { z } from 'zod';
 
 const email = z.string().trim().email();
+const phone = z
+  .string()
+  .trim()
+  .regex(/^\+?[1-9]\d{9,14}$/, 'Phone must be 10 to 15 digits and may include leading +');
 const password = z
   .string()
   .min(8, 'Password must be at least 8 characters')
@@ -9,6 +13,7 @@ const password = z
 export const signupSchema = z.object({
   name: z.string().trim().min(2, 'Name must be at least 2 characters').max(80),
   email,
+  phone,
   password,
 });
 
@@ -28,6 +33,22 @@ export const otpRequestSchema = z.object({
 export const otpVerifySchema = z.object({
   email,
   otp: z.string().trim().regex(/^\d{6}$/, 'OTP must be 6 digits'),
+});
+
+export const signupPhoneOtpVerifySchema = z.object({
+  signupSessionId: z.string().trim().uuid('Invalid signup session id'),
+  otp: z.string().trim().regex(/^\d{6}$/, 'OTP must be 6 digits'),
+});
+
+export const signupEmailOtpVerifySchema = z.object({
+  signupSessionId: z.string().trim().uuid('Invalid signup session id'),
+  otp: z.string().trim().regex(/^\d{6}$/, 'OTP must be 6 digits'),
+});
+
+export const signupOtpResendSchema = z.object({
+  signupSessionId: z.string().trim().uuid('Invalid signup session id'),
+  type: z.enum(['phone', 'email']),
+  action: z.enum(['resend']),
 });
 
 export const forgotPasswordSchema = z.object({
