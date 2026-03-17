@@ -65,8 +65,17 @@ export function AuthProvider({ children }) {
       loading,
       isAuthenticated: Boolean(token && user),
       signup: async (payload) => {
-        const response = await endpoints.signup(payload);
+        return endpoints.signup(payload);
+      },
+      verifySignupPhoneOtp: async (payload) => {
+        return endpoints.verifySignupPhoneOtp(payload);
+      },
+      verifySignupEmailOtp: async (payload) => {
+        const response = await endpoints.verifySignupEmailOtp(payload);
         return handleAuthResponse(response);
+      },
+      resendSignupOtp: async (payload) => {
+        return endpoints.resendSignupOtp(payload);
       },
       login: async (payload) => {
         const response = await endpoints.login(payload);

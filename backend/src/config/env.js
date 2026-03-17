@@ -39,9 +39,27 @@ const parseJsonObjectEnv = (rawValue, fallback = {}) => {
   }
 };
 
+const parseIntegerEnv = (rawValue, fallback) => {
+  const parsed = Number.parseInt(rawValue ?? '', 10);
+  return Number.isFinite(parsed) ? parsed : fallback;
+};
+
+const parseBooleanEnv = (rawValue, fallback) => {
+  if (typeof rawValue !== 'string') {
+    return fallback;
+  }
+
+  return rawValue.toLowerCase() === 'true';
+};
+
+const resolvedNodeEnv = process.env.NODE_ENV ?? 'development';
+const defaultDevOtpMode = resolvedNodeEnv !== 'production';
+
 export const env = {
   backendRoot,
-  nodeEnv: process.env.NODE_ENV ?? 'development',
+  nodeEnv: resolvedNodeEnv,
+  devOtpMode: parseBooleanEnv(process.env.DEV_OTP_MODE, defaultDevOtpMode),
+  devOtpExposeInApi: parseBooleanEnv(process.env.DEV_OTP_EXPOSE_IN_API, defaultDevOtpMode),
   port: Number(process.env.PORT ?? 5000),
   databaseUrl:
     process.env.DATABASE_URL ??
@@ -60,6 +78,17 @@ export const env = {
   smtpUser: process.env.SMTP_USER ?? '',
   smtpPass: process.env.SMTP_PASS ?? '',
   mailFrom: process.env.MAIL_FROM ?? 'no-reply@ai-agent.local',
+  fast2SmsApiKey: process.env.FAST2SMS_API_KEY ?? '',
+  fast2SmsSenderId: process.env.FAST2SMS_SENDER_ID ?? '',
+  fast2SmsRoute: process.env.FAST2SMS_ROUTE ?? 'q',
+  otpExpiryMinutes: parseIntegerEnv(process.env.OTP_EXPIRY_MINUTES, 5),
+  otpResendCooldownSeconds: parseIntegerEnv(
+    process.env.OTP_RESEND_COOLDOWN_SECONDS,
+    defaultDevOtpMode ? 30 : 60,
+  ),
+  otpMaxAttempts: parseIntegerEnv(process.env.OTP_MAX_ATTEMPTS, 3),
+  signupSessionTtlMinutes: parseIntegerEnv(process.env.SIGNUP_SESSION_TTL_MINUTES, 30),
+  signupCleanupIntervalMs: parseIntegerEnv(process.env.SIGNUP_CLEANUP_INTERVAL_MS, 10 * 60 * 1000),
   whatsappContacts: parseJsonObjectEnv(process.env.WHATSAPP_CONTACTS_JSON, {}),
   agentArtifactsDir: resolveArtifactsDir(),
   commandCatalogPath: resolveCommandCatalogPath(),

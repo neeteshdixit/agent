@@ -15,6 +15,23 @@
 
 On startup the backend initializes required tables automatically.
 
+## Development OTP Mode (No External SMS/Email)
+
+Use these `.env` values for local testing:
+
+```env
+DEV_OTP_MODE=true
+DEV_OTP_EXPOSE_IN_API=true
+OTP_RESEND_COOLDOWN_SECONDS=30
+OTP_MAX_ATTEMPTS=3
+```
+
+In this mode:
+
+- No external SMS or SMTP call is made.
+- OTP APIs return `developmentOtp` so frontend can display: `Your OTP is: 123456`.
+- OTP success/error and resend flow can be tested completely in UI.
+
 ## LLM Provider Setup
 
 Default (OpenAI):
@@ -35,6 +52,9 @@ OPENAI_MODEL=gemini-2.0-flash
 ## API modules
 
 - `POST /api/auth/signup`
+- `POST /api/auth/signup/verify-phone`
+- `POST /api/auth/signup/verify-email`
+- `POST /api/auth/signup/resend-otp`
 - `POST /api/auth/login`
 - `POST /api/auth/google`
 - `POST /api/auth/otp/request`
