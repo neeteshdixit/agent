@@ -1,20 +1,18 @@
 import { Router } from 'express';
 import {
   forgotPassword,
-  login,
   loginWithGoogle,
-  me,
-  requestOtp,
   resendSignupOtp,
   resetPassword,
   signup,
   verifySignupEmailOtp,
   verifySignupPhoneOtp,
-  verifyOtp,
 } from '../controllers/auth.controller.js';
+import { login, logout, me, resendLoginOtp, verifyLoginOtp } from '../controllers/login.controller.js';
 import { requireAuth } from '../middleware/auth.js';
 import {
   enforceActionWhitelist,
+  loginRateLimiter,
   otpDispatchRateLimiter,
   otpVerifyRateLimiter,
   preventOtpSpam,
@@ -25,8 +23,8 @@ import {
   forgotPasswordSchema,
   googleAuthSchema,
   loginSchema,
-  otpRequestSchema,
-  otpVerifySchema,
+  loginOtpResendSchema,
+  loginOtpVerifySchema,
   resetPasswordSchema,
   signupEmailOtpVerifySchema,
   signupOtpResendSchema,
@@ -57,12 +55,25 @@ router.post(
   enforceActionWhitelist(['resend']),
   asyncHandler(resendSignupOtp),
 );
-router.post('/login', validateBody(loginSchema), asyncHandler(login));
+router.post('/login', loginRateLimiter, validateBody(loginSchema), asyncHandler(login));
+router.post('/login/verify-otp', otpVerifyRateLimiter, validateBody(loginOtpVerifySchema), asyncHandler(verifyLoginOtp));
+router.post(
+  '/login/resend-otp',
+  otpDispatchRateLimiter,
+  preventOtpSpam,
+  validateBody(loginOtpResendSchema),
+  asyncHandler(resendLoginOtp),
+);
+router.post('/logout', asyncHandler(logout));
 router.post('/google', validateBody(googleAuthSchema), asyncHandler(loginWithGoogle));
-router.post('/otp/request', otpDispatchRateLimiter, preventOtpSpam, validateBody(otpRequestSchema), asyncHandler(requestOtp));
-router.post('/otp/verify', otpVerifyRateLimiter, validateBody(otpVerifySchema), asyncHandler(verifyOtp));
-router.post('/forgot-password', validateBody(forgotPasswordSchema), asyncHandler(forgotPassword));
-router.post('/reset-password', validateBody(resetPasswordSchema), asyncHandler(resetPassword));
+router.post(
+  '/forgot-password',
+  otpDispatchRateLimiter,
+  preventOtpSpam,
+  validateBody(forgotPasswordSchema),
+  asyncHandler(forgotPassword),
+);
+router.post('/reset-password', otpVerifyRateLimiter, validateBody(resetPasswordSchema), asyncHandler(resetPassword));
 router.get('/me', requireAuth, asyncHandler(me));
 
 export default router;

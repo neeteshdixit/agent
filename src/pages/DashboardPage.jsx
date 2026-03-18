@@ -7,7 +7,7 @@ import { useAuth } from '../context/AuthContext';
 import { endpoints } from '../lib/api';
 
 function DashboardPage() {
-  const { token, user, logout } = useAuth();
+  const { user, logout } = useAuth();
   const navigate = useNavigate();
   const [sessions, setSessions] = useState([]);
   const [activeSessionId, setActiveSessionId] = useState('');
@@ -20,10 +20,10 @@ function DashboardPage() {
   const [error, setError] = useState('');
 
   const refreshSessions = useCallback(async () => {
-    const response = await endpoints.listSessions(token);
+    const response = await endpoints.listSessions();
     setSessions(response.sessions);
     return response.sessions;
-  }, [token]);
+  }, []);
 
   const loadSession = useCallback(
     async (sessionId) => {
@@ -33,12 +33,12 @@ function DashboardPage() {
         return;
       }
 
-      const response = await endpoints.getSession(sessionId, token);
+      const response = await endpoints.getSession(sessionId);
       setMessages(response.session.messages);
       setActiveSessionId(sessionId);
       setAgentMode(Boolean(response.session.lastAgentMode));
     },
-    [token],
+    [],
   );
 
   useEffect(() => {
@@ -51,7 +51,7 @@ function DashboardPage() {
 
         const [sessionList, taskHistory] = await Promise.all([
           refreshSessions(),
-          endpoints.taskHistory(token),
+          endpoints.taskHistory(),
         ]);
 
         if (!mounted) {
@@ -82,17 +82,17 @@ function DashboardPage() {
     return () => {
       mounted = false;
     };
-  }, [token, refreshSessions, loadSession]);
+  }, [refreshSessions, loadSession]);
 
-  const handleLogout = () => {
-    logout();
+  const handleLogout = async () => {
+    await logout();
     navigate('/login', { replace: true });
   };
 
   const handleCreateSession = async () => {
     try {
       setError('');
-      const response = await endpoints.createSession(token);
+      const response = await endpoints.createSession();
       const newSession = response.session;
       setSessions((prev) => [newSession, ...prev]);
       setActiveSessionId(newSession.id);
@@ -105,7 +105,7 @@ function DashboardPage() {
   const handleDeleteSession = async (sessionId) => {
     try {
       setError('');
-      await endpoints.deleteSession(sessionId, token);
+      await endpoints.deleteSession(sessionId);
       const updated = sessions.filter((session) => session.id !== sessionId);
       setSessions(updated);
 
@@ -134,14 +134,11 @@ function DashboardPage() {
 
     try {
       setError('');
-      const response = await endpoints.sendMessage(
-        {
-          sessionId: activeSessionId || undefined,
-          message,
-          agentMode,
-        },
-        token,
-      );
+      const response = await endpoints.sendMessage({
+        sessionId: activeSessionId || undefined,
+        message,
+        agentMode,
+      });
 
       setMessages(response.messages);
       const updatedSessions = await refreshSessions();
@@ -177,7 +174,7 @@ function DashboardPage() {
     setTaskRunning(true);
     try {
       setError('');
-      const response = await endpoints.runTask({ command }, token);
+      const response = await endpoints.runTask({ command });
       setTasks((prev) => [response.task, ...prev]);
     } catch (requestError) {
       setError(requestError.message);

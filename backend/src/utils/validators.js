@@ -22,6 +22,15 @@ export const loginSchema = z.object({
   password,
 });
 
+export const loginOtpVerifySchema = z.object({
+  email,
+  otp: z.string().trim().regex(/^\d{6}$/, 'OTP must be 6 digits'),
+});
+
+export const loginOtpResendSchema = z.object({
+  email,
+});
+
 export const googleAuthSchema = z.object({
   credential: z.string().min(10, 'Google credential is required'),
 });
@@ -56,7 +65,8 @@ export const forgotPasswordSchema = z.object({
 });
 
 export const resetPasswordSchema = z.object({
-  token: z.string().trim().min(20, 'Invalid reset token'),
+  email,
+  otp: z.string().trim().regex(/^\d{6}$/, 'OTP must be 6 digits'),
   password,
 });
 
