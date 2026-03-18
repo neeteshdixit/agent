@@ -5,7 +5,7 @@ This repository contains a full-stack AI assistant app with:
 - Email/password authentication
 - Google OAuth login
 - OTP verification during signup
-- Forgot password + reset link
+- Forgot password + OTP-based reset
 - ChatGPT-style dashboard with saved conversation history
 - Agent Mode for automatic command interpretation + task execution
 - Task Runner panel with manual command execution

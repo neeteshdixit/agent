@@ -60,8 +60,8 @@ OPENAI_MODEL=gemini-2.0-flash
 - `POST /api/auth/login/resend-otp`
 - `POST /api/auth/logout`
 - `POST /api/auth/google`
-- `POST /api/auth/forgot-password`
-- `POST /api/auth/reset-password`
+- `POST /api/auth/forgot-password` (sends reset OTP)
+- `POST /api/auth/reset-password` (email + OTP + new password)
 - `GET /api/auth/me`
 - `GET /api/chat/sessions`
 - `POST /api/chat/sessions`
