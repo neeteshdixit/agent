@@ -4,7 +4,7 @@ This repository contains a full-stack AI assistant app with:
 
 - Email/password authentication
 - Google OAuth login
-- OTP login via email
+- OTP verification during signup
 - Forgot password + reset link
 - ChatGPT-style dashboard with saved conversation history
 - Agent Mode for automatic command interpretation + task execution
@@ -18,7 +18,7 @@ This repository contains a full-stack AI assistant app with:
 - Frontend: React (JavaScript), TailwindCSS, Vite
 - Backend: Node.js, Express
 - Database: PostgreSQL (`pg` driver)
-- Auth: JWT + Google ID token verification
+- Auth: JWT in HTTP-only cookies + Google ID token verification
 
 ## Project Structure
 

@@ -1,15 +1,15 @@
 import jwt from 'jsonwebtoken';
 import { env } from '../config/env.js';
 import { userRepository } from '../repositories/user.repository.js';
+import { extractTokenFromRequest } from '../utils/token.js';
 
 export const requireAuth = async (req, res, next) => {
   try {
-    const authHeader = req.headers.authorization;
-    if (!authHeader?.startsWith('Bearer ')) {
-      return res.status(401).json({ error: 'Authorization token missing' });
+    const token = extractTokenFromRequest(req);
+    if (!token) {
+      return res.status(401).json({ error: 'Authentication required' });
     }
 
-    const token = authHeader.slice(7);
     const decoded = jwt.verify(token, env.jwtSecret);
     const user = await userRepository.findById(decoded.userId);
 

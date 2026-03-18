@@ -49,6 +49,14 @@ export const emailService = {
     });
   },
 
+  sendPasswordResetOtp: async ({ email, otp, expiresInMinutes = 5 }) => {
+    await sendMailOrLog({
+      to: email,
+      subject: 'AI Assistant Password Reset OTP',
+      html: `<p>Your password reset OTP is <b>${otp}</b>.</p><p>This OTP expires in ${expiresInMinutes} minutes.</p>`,
+    });
+  },
+
   sendEmail: async ({ to, subject, body }) => {
     await sendMailOrLog({
       to,

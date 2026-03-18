@@ -2,7 +2,7 @@ import crypto from 'node:crypto';
 import bcrypt from 'bcryptjs';
 import { OAuth2Client } from 'google-auth-library';
 import { env } from '../config/env.js';
-import { signAuthToken } from '../utils/token.js';
+import { sendAuthResponse } from '../utils/authSession.js';
 import { emailService } from '../services/email.service.js';
 import { otpService } from '../services/otp.service.js';
 import { signupCleanupService } from '../services/signupCleanup.service.js';
@@ -20,16 +20,8 @@ const SIGNUP_STAGES = Object.freeze({
 });
 
 const OTP_TYPES = otpService.OTP_TYPES;
-
-const toPublicUser = (user) => ({
-  id: user.id,
-  name: user.name,
-  email: user.email,
-  phone: user.phone ?? null,
-  phoneVerifiedAt: user.phoneVerifiedAt ?? null,
-  emailVerifiedAt: user.emailVerifiedAt ?? null,
-  createdAt: user.createdAt,
-});
+const FORGOT_PASSWORD_OTP_EXPIRY_MINUTES = Math.max(env.otpExpiryMinutes, 1);
+const makeOtp = () => String(Math.floor(100000 + Math.random() * 900000));
 
 const maskPhone = (phone) => {
   if (!phone) {
@@ -59,7 +51,6 @@ const toPublicSignupSession = (session) => ({
   expiresAt: session.expiresAt,
 });
 
-const makeOtp = () => String(Math.floor(100000 + Math.random() * 900000));
 const hashValue = (value) => crypto.createHash('sha256').update(value).digest('hex');
 const normalizePhone = (value) => value.replace(/[^\d+]/g, '');
 const getOtpDispatchedMessage = (channelLabel) =>
@@ -69,11 +60,6 @@ const getOtpDispatchedMessage = (channelLabel) =>
 
 const createSessionExpiry = () =>
   new Date(Date.now() + Math.max(env.signupSessionTtlMinutes, 5) * 60 * 1000);
-
-const issueAuth = (user) => ({
-  token: signAuthToken({ userId: user.id, email: user.email }),
-  user: toPublicUser(user),
-});
 
 const ensureNoExistingUser = async ({ email, phone }) => {
   const [existingByEmail, existingByPhone] = await Promise.all([
@@ -226,7 +212,8 @@ export const verifySignupEmailOtp = async (req, res) => {
   await otpService.clearSessionOtps(session.id);
   await signupSessionRepository.deleteById(session.id);
 
-  return res.json(issueAuth(user));
+  const signedInUser = await userRepository.markLoginSuccess(user.id);
+  return sendAuthResponse(res, signedInUser ?? user);
 };
 
 export const resendSignupOtp = async (req, res) => {
@@ -259,22 +246,6 @@ export const resendSignupOtp = async (req, res) => {
   });
 };
 
-export const login = async (req, res) => {
-  const { email, password } = req.validatedBody;
-  const user = await userRepository.findByEmail(email);
-
-  if (!user?.passwordHash) {
-    throw new AppError('Invalid credentials', 401);
-  }
-
-  const matches = await bcrypt.compare(password, user.passwordHash);
-  if (!matches) {
-    throw new AppError('Invalid credentials', 401);
-  }
-
-  return res.json(issueAuth(user));
-};
-
 export const loginWithGoogle = async (req, res) => {
   const { credential } = req.validatedBody;
 
@@ -304,91 +275,53 @@ export const loginWithGoogle = async (req, res) => {
     user = await userRepository.setGoogleId({ userId: user.id, googleId: payload.sub });
   }
 
-  return res.json(issueAuth(user));
-};
-
-export const requestOtp = async (req, res) => {
-  const { email } = req.validatedBody;
-
-  let user = await userRepository.findByEmail(email);
-  if (!user) {
-    user = await userRepository.create({
-      name: email.split('@')[0],
-      email,
-      emailVerifiedAt: new Date(),
-    });
-  }
-
-  const otp = makeOtp();
-  user = await userRepository.setOtp({
-    userId: user.id,
-    otpCodeHash: hashValue(otp),
-    otpExpiresAt: new Date(Date.now() + Math.max(env.otpExpiryMinutes, 1) * 60 * 1000),
-  });
-
-  await emailService.sendOtp({
-    email: user.email,
-    otp,
-    expiresInMinutes: Math.max(env.otpExpiryMinutes, 1),
-  });
-
-  return res.json({
-    message: env.devOtpMode ? 'OTP sent automatically (development mode)' : 'OTP sent to your email',
-    developmentMode: env.devOtpMode,
-    developmentOtp: env.devOtpExposeInApi ? otp : undefined,
-    expiresInSeconds: Math.max(env.otpExpiryMinutes, 1) * 60,
-    resendInSeconds: Math.max(env.otpResendCooldownSeconds, 1),
-  });
-};
-
-export const verifyOtp = async (req, res) => {
-  const { email, otp } = req.validatedBody;
-  let user = await userRepository.findByEmail(email);
-
-  if (!user?.otpCodeHash || !user.otpExpiresAt) {
-    throw new AppError('OTP was not requested for this account', 400);
-  }
-
-  if (new Date(user.otpExpiresAt).getTime() < Date.now()) {
-    throw new AppError('OTP has expired', 400);
-  }
-
-  if (user.otpCodeHash !== hashValue(otp)) {
-    throw new AppError('Invalid OTP', 400);
-  }
-
-  user = await userRepository.clearOtp(user.id);
-  return res.json(issueAuth(user));
+  const signedInUser = await userRepository.markLoginSuccess(user.id);
+  return sendAuthResponse(res, signedInUser ?? user);
 };
 
 export const forgotPassword = async (req, res) => {
   const { email } = req.validatedBody;
   const user = await userRepository.findByEmail(email);
+  let developmentOtp;
 
   if (user) {
-    const rawToken = crypto.randomBytes(32).toString('hex');
-    await userRepository.setResetToken({
+    const otp = makeOtp();
+    developmentOtp = otp;
+    await userRepository.setResetOtp({
       userId: user.id,
-      resetTokenHash: hashValue(rawToken),
-      resetTokenExpiresAt: new Date(Date.now() + 60 * 60 * 1000),
+      resetOtpHash: hashValue(otp),
+      resetOtpExpiresAt: new Date(Date.now() + FORGOT_PASSWORD_OTP_EXPIRY_MINUTES * 60 * 1000),
     });
 
-    const resetUrl = `${env.clientUrl}/reset-password/${rawToken}`;
-    await emailService.sendPasswordReset({ email, resetUrl });
+    await emailService.sendPasswordResetOtp({
+      email,
+      otp,
+      expiresInMinutes: FORGOT_PASSWORD_OTP_EXPIRY_MINUTES,
+    });
   }
 
   return res.json({
-    message: 'If an account with that email exists, a reset link has been sent.',
+    message: 'If an account with that email exists, a password reset OTP has been sent.',
+    developmentMode: env.devOtpMode,
+    developmentOtp: env.devOtpExposeInApi ? developmentOtp : undefined,
+    expiresInSeconds: FORGOT_PASSWORD_OTP_EXPIRY_MINUTES * 60,
   });
 };
 
 export const resetPassword = async (req, res) => {
-  const { token, password } = req.validatedBody;
-  const tokenHash = hashValue(token);
+  const { email, otp, password } = req.validatedBody;
+  const user = await userRepository.findByEmail(email);
+  if (!user?.resetOtpHash || !user.resetOtpExpiresAt) {
+    throw new AppError('Invalid or expired OTP', 400);
+  }
 
-  const user = await userRepository.findByResetTokenHash(tokenHash);
-  if (!user) {
-    throw new AppError('Invalid or expired reset token', 400);
+  if (new Date(user.resetOtpExpiresAt).getTime() < Date.now()) {
+    await userRepository.clearResetOtp(user.id);
+    throw new AppError('OTP has expired. Request a new OTP.', 400);
+  }
+
+  if (user.resetOtpHash !== hashValue(otp)) {
+    throw new AppError('Invalid OTP', 400);
   }
 
   const passwordHash = await bcrypt.hash(password, 12);
@@ -397,9 +330,8 @@ export const resetPassword = async (req, res) => {
     passwordHash,
   });
 
-  return res.json(issueAuth(updatedUser));
-};
-
-export const me = async (req, res) => {
-  return res.json({ user: toPublicUser(req.user) });
+  return res.json({
+    message: 'Password has been reset successfully. Please log in with your new password.',
+    userId: updatedUser.id,
+  });
 };

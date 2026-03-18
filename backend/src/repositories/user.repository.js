@@ -13,8 +13,12 @@ const mapUser = (row) => {
     phone: row.phone,
     passwordHash: row.password_hash,
     googleId: row.google_id,
+    failedAttempts: Number(row.failed_attempts ?? 0),
+    lastLogin: row.last_login,
     otpCodeHash: row.otp_code_hash,
     otpExpiresAt: row.otp_expires_at,
+    resetOtpHash: row.reset_otp_hash,
+    resetOtpExpiresAt: row.reset_otp_expires_at,
     resetTokenHash: row.reset_token_hash,
     resetTokenExpiresAt: row.reset_token_expires_at,
     phoneVerifiedAt: row.phone_verified_at,
@@ -94,6 +98,43 @@ export const userRepository = {
     return mapUser(result.rows[0]);
   },
 
+  incrementFailedAttempts: async (userId) => {
+    const result = await query(
+      `UPDATE users
+       SET failed_attempts = COALESCE(failed_attempts, 0) + 1,
+           updated_at = NOW()
+       WHERE id = $1
+       RETURNING *`,
+      [userId],
+    );
+    return mapUser(result.rows[0]);
+  },
+
+  resetFailedAttempts: async (userId) => {
+    const result = await query(
+      `UPDATE users
+       SET failed_attempts = 0,
+           updated_at = NOW()
+       WHERE id = $1
+       RETURNING *`,
+      [userId],
+    );
+    return mapUser(result.rows[0]);
+  },
+
+  markLoginSuccess: async (userId) => {
+    const result = await query(
+      `UPDATE users
+       SET failed_attempts = 0,
+           last_login = NOW(),
+           updated_at = NOW()
+       WHERE id = $1
+       RETURNING *`,
+      [userId],
+    );
+    return mapUser(result.rows[0]);
+  },
+
   setOtp: async ({ userId, otpCodeHash, otpExpiresAt }) => {
     const result = await query(
       `UPDATE users
@@ -133,10 +174,39 @@ export const userRepository = {
     return mapUser(result.rows[0]);
   },
 
+  setResetOtp: async ({ userId, resetOtpHash, resetOtpExpiresAt }) => {
+    const result = await query(
+      `UPDATE users
+       SET reset_otp_hash = $1,
+           reset_otp_expires_at = $2,
+           updated_at = NOW()
+       WHERE id = $3
+       RETURNING *`,
+      [resetOtpHash, resetOtpExpiresAt, userId],
+    );
+    return mapUser(result.rows[0]);
+  },
+
+  clearResetOtp: async (userId) => {
+    const result = await query(
+      `UPDATE users
+       SET reset_otp_hash = NULL,
+           reset_otp_expires_at = NULL,
+           updated_at = NOW()
+       WHERE id = $1
+       RETURNING *`,
+      [userId],
+    );
+    return mapUser(result.rows[0]);
+  },
+
   resetPassword: async ({ userId, passwordHash }) => {
     const result = await query(
       `UPDATE users
        SET password_hash = $1,
+           failed_attempts = 0,
+           reset_otp_hash = NULL,
+           reset_otp_expires_at = NULL,
            reset_token_hash = NULL,
            reset_token_expires_at = NULL,
            updated_at = NOW()

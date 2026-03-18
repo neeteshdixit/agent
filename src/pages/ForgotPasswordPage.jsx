@@ -17,7 +17,7 @@ function ForgotPasswordPage() {
       setLoading(true);
       setError('');
       setMessage('');
-      const response = await forgotPassword(email);
+      const response = await forgotPassword(email.trim().toLowerCase());
       setMessage(response.message);
     } catch (requestError) {
       setError(requestError.message);

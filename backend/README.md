@@ -56,9 +56,10 @@ OPENAI_MODEL=gemini-2.0-flash
 - `POST /api/auth/signup/verify-email`
 - `POST /api/auth/signup/resend-otp`
 - `POST /api/auth/login`
+- `POST /api/auth/login/verify-otp`
+- `POST /api/auth/login/resend-otp`
+- `POST /api/auth/logout`
 - `POST /api/auth/google`
-- `POST /api/auth/otp/request`
-- `POST /api/auth/otp/verify`
 - `POST /api/auth/forgot-password`
 - `POST /api/auth/reset-password`
 - `GET /api/auth/me`

@@ -34,6 +34,14 @@ export const otpVerifyRateLimiter = rateLimit({
   message: { error: 'Too many OTP verification attempts. Please try again later.' },
 });
 
+export const loginRateLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many login attempts. Please try again in 15 minutes.' },
+});
+
 export const preventOtpSpam = (req, res, next) => {
   const key = spamGuardKey(req);
   const now = Date.now();

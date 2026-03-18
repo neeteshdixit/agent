@@ -30,12 +30,12 @@ const toApiError = async (response) => {
   throw error;
 };
 
-export const apiRequest = async (path, { method = 'GET', body, token, headers } = {}) => {
+export const apiRequest = async (path, { method = 'GET', body, headers } = {}) => {
   const response = await fetch(`${API_BASE_URL}${path}`, {
     method,
+    credentials: 'include',
     headers: {
       'Content-Type': 'application/json',
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
       ...(headers ?? {}),
     },
     body: body ? JSON.stringify(body) : undefined,
@@ -58,20 +58,21 @@ export const endpoints = {
   verifySignupEmailOtp: (payload) => apiRequest('/auth/signup/verify-email', { method: 'POST', body: payload }),
   resendSignupOtp: (payload) => apiRequest('/auth/signup/resend-otp', { method: 'POST', body: payload }),
   login: (payload) => apiRequest('/auth/login', { method: 'POST', body: payload }),
+  verifyLoginOtp: (payload) => apiRequest('/auth/login/verify-otp', { method: 'POST', body: payload }),
+  resendLoginOtp: (payload) => apiRequest('/auth/login/resend-otp', { method: 'POST', body: payload }),
+  logout: () => apiRequest('/auth/logout', { method: 'POST' }),
   loginWithGoogle: (payload) => apiRequest('/auth/google', { method: 'POST', body: payload }),
-  requestOtp: (payload) => apiRequest('/auth/otp/request', { method: 'POST', body: payload }),
-  verifyOtp: (payload) => apiRequest('/auth/otp/verify', { method: 'POST', body: payload }),
   forgotPassword: (payload) => apiRequest('/auth/forgot-password', { method: 'POST', body: payload }),
   resetPassword: (payload) => apiRequest('/auth/reset-password', { method: 'POST', body: payload }),
-  me: (token) => apiRequest('/auth/me', { token }),
+  me: () => apiRequest('/auth/me'),
   publicConfig: () => apiRequest('/config/public'),
 
-  listSessions: (token) => apiRequest('/chat/sessions', { token }),
-  getSession: (sessionId, token) => apiRequest(`/chat/sessions/${sessionId}`, { token }),
-  createSession: (token) => apiRequest('/chat/sessions', { method: 'POST', token }),
-  deleteSession: (sessionId, token) => apiRequest(`/chat/sessions/${sessionId}`, { method: 'DELETE', token }),
-  sendMessage: (payload, token) => apiRequest('/chat/message', { method: 'POST', body: payload, token }),
+  listSessions: () => apiRequest('/chat/sessions'),
+  getSession: (sessionId) => apiRequest(`/chat/sessions/${sessionId}`),
+  createSession: () => apiRequest('/chat/sessions', { method: 'POST' }),
+  deleteSession: (sessionId) => apiRequest(`/chat/sessions/${sessionId}`, { method: 'DELETE' }),
+  sendMessage: (payload) => apiRequest('/chat/message', { method: 'POST', body: payload }),
 
-  runTask: (payload, token) => apiRequest('/tasks/run', { method: 'POST', body: payload, token }),
-  taskHistory: (token) => apiRequest('/tasks/history', { token }),
+  runTask: (payload) => apiRequest('/tasks/run', { method: 'POST', body: payload }),
+  taskHistory: () => apiRequest('/tasks/history'),
 };
