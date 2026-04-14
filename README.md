@@ -70,38 +70,7 @@ VITE_GOOGLE_CLIENT_ID=
 
 ### Backend `backend/.env`
 
-```env
-NODE_ENV=development
-PORT=5000
-DATABASE_URL=postgresql://postgres:postgres@127.0.0.1:5432/ai_agent
-DATABASE_SSL=false
-CLIENT_URL=http://localhost:5173
 
-JWT_SECRET=replace-with-a-long-random-secret
-JWT_EXPIRY=7d
-
-OPENAI_API_KEY=
-OPENAI_BASE_URL=
-OPENAI_MODEL=gpt-4.1-mini
-GOOGLE_CLIENT_ID=
-
-SMTP_HOST=
-SMTP_PORT=587
-SMTP_SECURE=false
-SMTP_USER=
-SMTP_PASS=
-MAIL_FROM=no-reply@ai-agent.local
-
-AGENT_ARTIFACTS_DIR=./artifacts
-```
-
-Gemini via OpenAI-compatible API:
-
-```env
-OPENAI_API_KEY=AIza...
-OPENAI_BASE_URL=https://generativelanguage.googleapis.com/v1beta/openai/
-OPENAI_MODEL=gemini-2.0-flash
-```
 
 ## Run
 
