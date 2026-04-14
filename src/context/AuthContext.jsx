@@ -1,19 +1,9 @@
 import { createContext, useContext, useEffect, useMemo, useState } from 'react';
 import { endpoints } from '../lib/api';
 
-const STORAGE_KEY = 'agent_auth_token';
 const AuthContext = createContext(null);
 
-const persistToken = (token) => {
-  if (token) {
-    localStorage.setItem(STORAGE_KEY, token);
-  } else {
-    localStorage.removeItem(STORAGE_KEY);
-  }
-};
-
 export function AuthProvider({ children }) {
-  const [token, setToken] = useState(() => localStorage.getItem(STORAGE_KEY) ?? '');
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
@@ -21,21 +11,13 @@ export function AuthProvider({ children }) {
     let mounted = true;
 
     const hydrateUser = async () => {
-      if (!token) {
-        setUser(null);
-        setLoading(false);
-        return;
-      }
-
       try {
-        const response = await endpoints.me(token);
+        const response = await endpoints.me();
         if (mounted) {
           setUser(response.user);
         }
       } catch {
-        persistToken('');
         if (mounted) {
-          setToken('');
           setUser(null);
         }
       } finally {
@@ -49,48 +31,61 @@ export function AuthProvider({ children }) {
     return () => {
       mounted = false;
     };
-  }, [token]);
+  }, []);
 
   const handleAuthResponse = (response) => {
-    setToken(response.token);
     setUser(response.user);
-    persistToken(response.token);
     return response;
   };
 
   const value = useMemo(
     () => ({
-      token,
       user,
       loading,
-      isAuthenticated: Boolean(token && user),
+      isAuthenticated: Boolean(user),
       signup: async (payload) => {
-        const response = await endpoints.signup(payload);
+        return endpoints.signup(payload);
+      },
+      verifySignupPhoneOtp: async (payload) => {
+        return endpoints.verifySignupPhoneOtp(payload);
+      },
+      verifySignupEmailOtp: async (payload) => {
+        const response = await endpoints.verifySignupEmailOtp(payload);
         return handleAuthResponse(response);
+      },
+      resendSignupOtp: async (payload) => {
+        return endpoints.resendSignupOtp(payload);
       },
       login: async (payload) => {
         const response = await endpoints.login(payload);
+        if (response?.requiresOtp) {
+          return response;
+        }
+
         return handleAuthResponse(response);
       },
+      verifyLoginOtp: async ({ email, otp }) => {
+        const response = await endpoints.verifyLoginOtp({ email, otp });
+        return handleAuthResponse(response);
+      },
+      resendLoginOtp: async (email) => endpoints.resendLoginOtp({ email }),
       loginWithGoogle: async (credential) => {
         const response = await endpoints.loginWithGoogle({ credential });
         return handleAuthResponse(response);
       },
-      requestOtp: async (email) => endpoints.requestOtp({ email }),
-      verifyOtp: async ({ email, otp }) => {
-        const response = await endpoints.verifyOtp({ email, otp });
-        return handleAuthResponse(response);
-      },
       forgotPassword: async (email) => endpoints.forgotPassword({ email }),
-      resetPassword: async ({ token: resetToken, password }) =>
-        endpoints.resetPassword({ token: resetToken, password }),
-      logout: () => {
-        persistToken('');
-        setToken('');
+      resetPassword: async ({ email, otp, password }) =>
+        endpoints.resetPassword({ email, otp, password }),
+      logout: async () => {
+        try {
+          await endpoints.logout();
+        } catch {
+          // Swallow logout network errors and clear local session state.
+        }
         setUser(null);
       },
     }),
-    [token, user, loading],
+    [user, loading],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

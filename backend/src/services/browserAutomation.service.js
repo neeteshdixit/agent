@@ -5,6 +5,7 @@ import puppeteer from 'puppeteer-core';
 
 const DEFAULT_TIMEOUT = 25000;
 const POLL_DELAY_MS = 300;
+const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 const resolveChromePath = async () => {
   const candidates = [
@@ -69,7 +70,7 @@ const waitForAnySelector = async (page, selectors, timeout = DEFAULT_TIMEOUT) =>
       }
     }
 
-    await page.waitForTimeout(POLL_DELAY_MS);
+    await delay(POLL_DELAY_MS);
   }
 
   throw new Error('Required page element was not found in time.');

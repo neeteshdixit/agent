@@ -1,14 +1,16 @@
 import { useCallback, useMemo, useRef, useState } from 'react';
 
-const SpeechRecognitionAPI = window.SpeechRecognition || window.webkitSpeechRecognition;
-
 export const useSpeechRecognition = () => {
   const [isListening, setIsListening] = useState(false);
   const [error, setError] = useState('');
   const [transcript, setTranscript] = useState('');
   const recognitionRef = useRef(null);
+  const SpeechRecognitionAPI =
+    typeof window !== 'undefined'
+      ? window.SpeechRecognition || window.webkitSpeechRecognition
+      : null;
 
-  const supported = useMemo(() => Boolean(SpeechRecognitionAPI), []);
+  const supported = Boolean(SpeechRecognitionAPI);
 
   const start = useCallback(() => {
     if (!supported || isListening) {

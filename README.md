@@ -4,13 +4,13 @@ This repository contains a full-stack assistant with:
 
 - Email/password authentication
 - Google OAuth login
-- OTP login via email
-- Forgot password and reset link flow
+- OTP login via email and verification during signup
+- Forgot password + OTP-based reset and reset link flow
 - Chat dashboard with saved conversation history
 - Agent mode for command interpretation and task execution
-- Manual task runner
+- Manual task runner panel for commands
 - Voice input using the Web Speech API
-- OpenAI chat responses
+- OpenAI chat/command understanding
 - Python ML-based command understanding with feedback learning
 - PostgreSQL persistence
 
@@ -19,8 +19,8 @@ This repository contains a full-stack assistant with:
 - Frontend: React, TailwindCSS, Vite
 - Backend: Node.js, Express
 - AI service: Python, Flask, scikit-learn, RapidFuzz
-- Database: PostgreSQL
-- Auth: JWT and Google ID token verification
+- Database: PostgreSQL (`pg` driver)
+- Auth: JWT in HTTP-only cookies + Google ID token verification
 
 ## Folder Structure
 
@@ -108,6 +108,19 @@ AI_MODEL_PATH=./ai/models/intent_model.joblib
 
 ## Run
 
+Prerequisites:
+
+- Node.js 20+ and npm
+- PostgreSQL 14+ running locally
+- Google Chrome (required for browser automation commands)
+
+Setup:
+
+```bash
+cp .env.example .env
+cp backend/.env.example backend/.env
+```
+
 Frontend:
 
 ```bash
@@ -133,6 +146,11 @@ python app.py
 ```
 
 The backend auto-creates required PostgreSQL tables at startup.
+
+If Node is not installed, install it first:
+
+- Windows: https://nodejs.org/
+- Verify: `node -v` and `npm -v`
 
 ## Command Learning
 

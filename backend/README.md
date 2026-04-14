@@ -41,7 +41,25 @@ The active command pipeline is:
 6. Node executes the selected action.
 7. Node sends the execution result back to Python through `/feedback`.
 
-If the Python service is unavailable, the Node backend falls back to the legacy router so the app stays usable.
+If the Python service is unavailable, the Node backend falls back to the legacy router so the app remains usable.
+
+## Development OTP Mode (No External SMS/Email)
+
+Use these `.env` values for local testing:
+
+```env
+DEV_OTP_MODE=true
+DEV_OTP_EXPOSE_IN_API=true
+OTP_RESEND_COOLDOWN_SECONDS=30
+OTP_MAX_ATTEMPTS=3
+```
+
+In this mode:
+
+- No external SMS or SMTP call is made.
+- OTP APIs return `developmentOtp` so frontend can display: `Your OTP is: 123456`.
+- OTP success/error and resend flow can be tested completely in UI.
+
 
 ## Python AI Service Files
 
@@ -94,12 +112,16 @@ AI_MODEL_PATH=./ai/models/intent_model.joblib
 ## API Modules
 
 - `POST /api/auth/signup`
+- `POST /api/auth/signup/verify-phone`
+- `POST /api/auth/signup/verify-email`
+- `POST /api/auth/signup/resend-otp`
 - `POST /api/auth/login`
+- `POST /api/auth/login/verify-otp`
+- `POST /api/auth/login/resend-otp`
+- `POST /api/auth/logout`
 - `POST /api/auth/google`
-- `POST /api/auth/otp/request`
-- `POST /api/auth/otp/verify`
-- `POST /api/auth/forgot-password`
-- `POST /api/auth/reset-password`
+- `POST /api/auth/forgot-password` (sends reset OTP)
+- `POST /api/auth/reset-password` (email + OTP + new password)
 - `GET /api/auth/me`
 - `GET /api/chat/sessions`
 - `POST /api/chat/sessions`
