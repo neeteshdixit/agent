@@ -72,12 +72,6 @@ VITE_GOOGLE_CLIENT_ID=
 Backend `backend/.env`:
 
 ```env
-NODE_ENV=development
-PORT=5000
-DATABASE_URL=postgresql://postgres:postgres@127.0.0.1:5432/ai_agent
-DATABASE_SSL=false
-CLIENT_URL=http://localhost:5173
-
 JWT_SECRET=replace-with-a-long-random-secret
 JWT_EXPIRY=7d
 
