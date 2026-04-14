@@ -150,10 +150,7 @@ function DashboardPage() {
           {
             id: `chat-task-${Date.now()}`,
             command: message,
-            action: response.task.action,
-            status: response.task.status,
-            progress: response.task.progress,
-            result: response.task.result,
+            ...response.task,
             createdAt: new Date().toISOString(),
           },
           ...prev,

@@ -88,8 +88,13 @@ export const sendMessage = async (req, res) => {
     });
     assistantContent = agentResult.assistantMessage;
     task = {
+      intent: agentResult.interpreted.intent,
       action: agentResult.interpreted.action,
       args: agentResult.interpreted.args,
+      source: agentResult.interpreted.source,
+      route: agentResult.interpreted.route,
+      confidence: agentResult.interpreted.confidence,
+      correctedCommand: agentResult.interpreted.correctedCommand,
       status: agentResult.execution.status,
       progress: agentResult.execution.progress,
       result: agentResult.execution.result,

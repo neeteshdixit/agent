@@ -20,6 +20,25 @@ const client = (() => {
 
 const isGeminiEndpoint = env.openaiBaseUrl.includes('generativelanguage.googleapis.com');
 
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+const isRetryableProviderError = (error) =>
+  error?.status === 429 ||
+  error?.status === 500 ||
+  error?.status === 503 ||
+  error?.code === 'insufficient_quota';
+
+const buildOfflineChatReply = (messages) => {
+  const lastUserMessage = [...messages].reverse().find((message) => message?.role === 'user')?.content ?? '';
+  const commandish = /\b(open|play|search|send|launch|start|show)\b/i.test(lastUserMessage);
+
+  if (commandish) {
+    return 'The cloud chat model is temporarily unavailable. If you want, switch to Agent Mode and I can still run commands locally.';
+  }
+
+  return 'The cloud chat model is temporarily unavailable right now, but I can still help with local command execution and saved task learning.';
+};
+
 const safeJsonParse = (value) => {
   try {
     return JSON.parse(value);
@@ -245,7 +264,7 @@ export const openaiService = {
     }
 
     try {
-      const completion = await client.chat.completions.create({
+      const request = {
         model: env.openaiModel,
         temperature: 0.2,
         messages: [
@@ -256,16 +275,45 @@ export const openaiService = {
           },
           ...messages,
         ],
-      });
+      };
+
+      let completion = null;
+      let lastError = null;
+      for (let attempt = 0; attempt < 2; attempt += 1) {
+        try {
+          completion = await client.chat.completions.create(request);
+          lastError = null;
+          break;
+        } catch (error) {
+          lastError = error;
+          if (!isRetryableProviderError(error) || attempt === 1) {
+            break;
+          }
+
+          await sleep(750 * (attempt + 1));
+        }
+      }
+
+      if (!completion) {
+        throw lastError ?? new Error('Chat completion failed.');
+      }
 
       return completion.choices[0]?.message?.content?.trim() ?? 'I could not generate a response.';
     } catch (error) {
       if (error?.code === 'insufficient_quota') {
-        return 'OpenAI quota exceeded. Task automation is still available, but chat generation is temporarily unavailable.';
+        return buildOfflineChatReply(messages);
       }
 
       if (error?.status === 429) {
-        return 'Model provider quota or rate limit exceeded. Please retry shortly or use a key with available quota.';
+        return buildOfflineChatReply(messages);
+      }
+
+      if (error?.status === 503) {
+        return buildOfflineChatReply(messages);
+      }
+
+      if (error?.status === 500) {
+        return buildOfflineChatReply(messages);
       }
 
       if (error?.code === 'invalid_api_key') {

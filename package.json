@@ -8,7 +8,8 @@
     "build": "vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "dev:backend": "npm --prefix backend run dev"
+    "dev:backend": "npm --prefix backend run dev",
+    "dev:ai": "npm --prefix backend run ai:serve"
   },
   "dependencies": {
     "react": "^19.2.0",

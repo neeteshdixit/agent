@@ -1,0 +1,328 @@
+{
+  "version": 1,
+  "updated_at": "2026-04-15T00:00:00Z",
+  "examples": [
+    {
+      "text": "open whatsapp installed in my pc",
+      "intent": "open_local_app",
+      "action": "open_local_app",
+      "args": { "app": "whatsapp" },
+      "source": "seed"
+    },
+    {
+      "text": "open chrome on my pc",
+      "intent": "open_local_app",
+      "action": "open_local_app",
+      "args": { "app": "chrome" },
+      "source": "seed"
+    },
+    {
+      "text": "launch microsoft word",
+      "intent": "open_local_app",
+      "action": "open_local_app",
+      "args": { "app": "word" },
+      "source": "seed"
+    },
+    {
+      "text": "start excel app",
+      "intent": "open_local_app",
+      "action": "open_local_app",
+      "args": { "app": "excel" },
+      "source": "seed"
+    },
+    {
+      "text": "open notepad",
+      "intent": "open_local_app",
+      "action": "open_local_app",
+      "args": { "app": "notepad" },
+      "source": "seed"
+    },
+    {
+      "text": "open calculator on my pc",
+      "intent": "open_local_app",
+      "action": "open_local_app",
+      "args": { "app": "calculator" },
+      "source": "seed"
+    },
+    {
+      "text": "open spotify app",
+      "intent": "open_local_app",
+      "action": "open_local_app",
+      "args": { "app": "spotify" },
+      "source": "seed"
+    },
+    {
+      "text": "open visual studio code",
+      "intent": "open_local_app",
+      "action": "open_local_app",
+      "args": { "app": "vscode" },
+      "source": "seed"
+    },
+    {
+      "text": "open whatsapp on chrome",
+      "intent": "open_browser_app",
+      "action": "open_browser_app",
+      "args": { "app": "whatsapp_web", "browser": "chrome" },
+      "source": "seed"
+    },
+    {
+      "text": "open youtube on chrome",
+      "intent": "open_browser_app",
+      "action": "open_browser_app",
+      "args": { "app": "youtube", "browser": "chrome" },
+      "source": "seed"
+    },
+    {
+      "text": "open gmail on chrome",
+      "intent": "open_browser_app",
+      "action": "open_browser_app",
+      "args": { "app": "gmail", "browser": "chrome" },
+      "source": "seed"
+    },
+    {
+      "text": "launch whatsapp web in chrome",
+      "intent": "open_browser_app",
+      "action": "open_browser_app",
+      "args": { "app": "whatsapp_web", "browser": "chrome" },
+      "source": "seed"
+    },
+    {
+      "text": "open youtube in browser chrome",
+      "intent": "open_browser_app",
+      "action": "open_browser_app",
+      "args": { "app": "youtube", "browser": "chrome" },
+      "source": "seed"
+    },
+    {
+      "text": "start gmail in chrome",
+      "intent": "open_browser_app",
+      "action": "open_browser_app",
+      "args": { "app": "gmail", "browser": "chrome" },
+      "source": "seed"
+    },
+    {
+      "text": "play shape of you on youtube on chrome",
+      "intent": "youtube_play",
+      "action": "youtube_play",
+      "args": { "query": "shape of you", "browser": "chrome" },
+      "source": "seed"
+    },
+    {
+      "text": "play the official trailer on youtube",
+      "intent": "youtube_play",
+      "action": "youtube_play",
+      "args": { "query": "official trailer", "browser": "chrome" },
+      "source": "seed"
+    },
+    {
+      "text": "open playlist of arijit singh on youtube",
+      "intent": "youtube_play",
+      "action": "youtube_play",
+      "args": { "query": "arijit singh playlist", "browser": "chrome" },
+      "source": "seed"
+    },
+    {
+      "text": "play hindi songs on youtube chrome",
+      "intent": "youtube_play",
+      "action": "youtube_play",
+      "args": { "query": "hindi songs", "browser": "chrome" },
+      "source": "seed"
+    },
+    {
+      "text": "search best ai tools",
+      "intent": "search_web",
+      "action": "search_web",
+      "args": { "query": "best ai tools" },
+      "source": "seed"
+    },
+    {
+      "text": "google latest machine learning news",
+      "intent": "search_web",
+      "action": "search_web",
+      "args": { "query": "latest machine learning news" },
+      "source": "seed"
+    },
+    {
+      "text": "find open source video editors online",
+      "intent": "search_web",
+      "action": "search_web",
+      "args": { "query": "open source video editors online" },
+      "source": "seed"
+    },
+    {
+      "text": "look up python flask tutorial",
+      "intent": "search_web",
+      "action": "search_web",
+      "args": { "query": "python flask tutorial" },
+      "source": "seed"
+    },
+    {
+      "text": "send email to someone@example.com saying hello",
+      "intent": "send_email",
+      "action": "send_email",
+      "args": { "to": "someone@example.com", "message": "hello" },
+      "source": "seed"
+    },
+    {
+      "text": "send mail good morning to team@example.com",
+      "intent": "send_email",
+      "action": "send_email",
+      "args": { "to": "team@example.com", "message": "good morning" },
+      "source": "seed"
+    },
+    {
+      "text": "email john@example.com project update",
+      "intent": "send_email",
+      "action": "send_email",
+      "args": { "to": "john@example.com", "message": "project update" },
+      "source": "seed"
+    },
+    {
+      "text": "send email to boss@example.com saying meeting moved to 4 pm",
+      "intent": "send_email",
+      "action": "send_email",
+      "args": { "to": "boss@example.com", "message": "meeting moved to 4 pm" },
+      "source": "seed"
+    },
+    {
+      "text": "send whatsapp message to hr maam saying hello",
+      "intent": "send_whatsapp_message",
+      "action": "send_whatsapp_message",
+      "args": { "contact": "hr maam", "message": "hello" },
+      "source": "seed"
+    },
+    {
+      "text": "send whatsapp message to +919876543210 saying please call me",
+      "intent": "send_whatsapp_message",
+      "action": "send_whatsapp_message",
+      "args": { "contact": "+919876543210", "message": "please call me" },
+      "source": "seed"
+    },
+    {
+      "text": "message john on whatsapp saying meeting at 5",
+      "intent": "send_whatsapp_message",
+      "action": "send_whatsapp_message",
+      "args": { "contact": "john", "message": "meeting at 5" },
+      "source": "seed"
+    },
+    {
+      "text": "send a whatsapp message to mom hello",
+      "intent": "send_whatsapp_message",
+      "action": "send_whatsapp_message",
+      "args": { "contact": "mom", "message": "hello" },
+      "source": "seed"
+    },
+    {
+      "text": "open downloads folder",
+      "intent": "open_folder",
+      "action": "open_folder",
+      "args": { "folder": "downloads" },
+      "source": "seed"
+    },
+    {
+      "text": "show documents folder",
+      "intent": "open_folder",
+      "action": "open_folder",
+      "args": { "folder": "documents" },
+      "source": "seed"
+    },
+    {
+      "text": "open desktop folder",
+      "intent": "open_folder",
+      "action": "open_folder",
+      "args": { "folder": "desktop" },
+      "source": "seed"
+    },
+    {
+      "text": "open pictures folder",
+      "intent": "open_folder",
+      "action": "open_folder",
+      "args": { "folder": "pictures" },
+      "source": "seed"
+    },
+    {
+      "text": "open music folder",
+      "intent": "open_folder",
+      "action": "open_folder",
+      "args": { "folder": "music" },
+      "source": "seed"
+    },
+    {
+      "text": "show videos folder",
+      "intent": "open_folder",
+      "action": "open_folder",
+      "args": { "folder": "videos" },
+      "source": "seed"
+    },
+    {
+      "text": "play music",
+      "intent": "play_music",
+      "action": "play_music",
+      "args": {},
+      "source": "seed"
+    },
+    {
+      "text": "start music player",
+      "intent": "play_music",
+      "action": "play_music",
+      "args": {},
+      "source": "seed"
+    },
+    {
+      "text": "play a song",
+      "intent": "play_music",
+      "action": "play_music",
+      "args": {},
+      "source": "seed"
+    },
+    {
+      "text": "open my music",
+      "intent": "play_music",
+      "action": "play_music",
+      "args": {},
+      "source": "seed"
+    },
+    {
+      "text": "what can you do",
+      "intent": "chat_only",
+      "action": "chat_only",
+      "args": {},
+      "source": "seed"
+    },
+    {
+      "text": "tell me a joke",
+      "intent": "chat_only",
+      "action": "chat_only",
+      "args": {},
+      "source": "seed"
+    },
+    {
+      "text": "summarize our last conversation",
+      "intent": "chat_only",
+      "action": "chat_only",
+      "args": {},
+      "source": "seed"
+    },
+    {
+      "text": "how are you today",
+      "intent": "chat_only",
+      "action": "chat_only",
+      "args": {},
+      "source": "seed"
+    },
+    {
+      "text": "explain reinforcement learning",
+      "intent": "chat_only",
+      "action": "chat_only",
+      "args": {},
+      "source": "seed"
+    },
+    {
+      "text": "help me plan my day",
+      "intent": "chat_only",
+      "action": "chat_only",
+      "args": {},
+      "source": "seed"
+    }
+  ]
+}

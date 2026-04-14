@@ -1,12 +1,11 @@
-import { openaiService } from './openai.service.js';
+import { aiInferenceService } from './aiInference.service.js';
 import { taskExecutorService } from './taskExecutor.service.js';
 import { taskFeedbackService } from './taskFeedback.service.js';
 
 export const agentService = {
   runCommand: async ({ userId, command }) => {
-    const learned = await taskFeedbackService.resolveLearnedCommand({ userId, command });
     const retryState = await taskFeedbackService.checkRetryWindow({ userId, command });
-    if (!retryState.canRetry && !learned) {
+    if (!retryState.canRetry) {
       const waitingExecution = taskFeedbackService.buildWaitingExecution({
         retryAfter: retryState.retryAfter,
       });
@@ -33,7 +32,7 @@ export const agentService = {
       };
     }
 
-    const interpreted = learned ?? (await openaiService.interpretTaskCommand({ command }));
+    const interpreted = await aiInferenceService.interpretTaskCommand({ userId, command });
     const attemptNumber =
       retryState.canRetry
         ? retryState.attempts

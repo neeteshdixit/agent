@@ -1,5 +1,6 @@
 import { commandLearningRepository } from '../repositories/commandLearning.repository.js';
 import { taskHistoryRepository } from '../repositories/taskHistory.repository.js';
+import { aiInferenceService } from './aiInference.service.js';
 
 const RETRY_WINDOW_MS = 60 * 60 * 1000;
 const CORRECTION_LOOKBACK_HOURS = 24;
@@ -149,6 +150,30 @@ const buildFailureSuggestion = ({ action, failureReason, errorMessage, attempts 
   return null;
 };
 
+const deriveReward = ({ interpreted, execution, failureReason }) => {
+  if (interpreted.action === 'chat_only') {
+    return 1;
+  }
+
+  if (execution.status === 'completed') {
+    return 1;
+  }
+
+  if (execution.status === 'waiting') {
+    return 0;
+  }
+
+  if (execution.status === 'blocked') {
+    return -0.35;
+  }
+
+  if (['application_not_installed', 'browser_unavailable', 'whatsapp_unavailable'].includes(failureReason)) {
+    return -0.25;
+  }
+
+  return -1;
+};
+
 const getRetryWaitText = (retryAfter) => {
   const parsed = parseDate(retryAfter);
   if (!parsed) {
@@ -296,6 +321,29 @@ export const taskFeedbackService = {
     execution,
     attempts,
   }) => {
+    const sendAiFeedback = ({ reward, failureReason = null, suggestion = null }) => {
+      void aiInferenceService.recordFeedback({
+        command,
+        normalized_command: normalizedCommand,
+        corrected_command: interpreted.correctedCommand ?? command,
+        predicted_intent: interpreted.intent ?? interpreted.action,
+        predicted_action: interpreted.action,
+        actual_intent: interpreted.intent ?? interpreted.action,
+        actual_action: interpreted.action,
+        reward,
+        status: execution.status,
+        execution_status: execution.status,
+        failure_reason: failureReason,
+        suggestion,
+        confidence: interpreted.confidence ?? 0,
+        route: interpreted.route ?? '',
+        source: interpreted.source ?? '',
+        args: interpreted.args ?? {},
+        result: execution.result ?? null,
+        retrain: reward > 0,
+      });
+    };
+
     if (interpreted.action === 'chat_only') {
       await taskHistoryRepository.create({
         userId,
@@ -307,6 +355,14 @@ export const taskFeedbackService = {
         errorMessage: execution.result?.message ?? 'Instruction mapped to chat mode only.',
         failureReason: 'non_executable_instruction',
         attempts: 1,
+      });
+
+      sendAiFeedback({
+        reward: deriveReward({
+          interpreted,
+          execution,
+          failureReason: 'non_executable_instruction',
+        }),
       });
 
       return {
@@ -375,6 +431,14 @@ export const taskFeedbackService = {
         progress.push('Learned correction mapping from previous failed command');
       }
 
+      sendAiFeedback({
+        reward: deriveReward({
+          interpreted,
+          execution,
+          failureReason: null,
+        }),
+      });
+
       return {
         execution: {
           ...execution,
@@ -422,6 +486,16 @@ export const taskFeedbackService = {
     const userMessage = cooldown
       ? 'This task cannot be executed now. You can try again in 1 hour.'
       : 'This task could not be completed right now. You can try again in 1 hour.';
+
+    sendAiFeedback({
+      reward: deriveReward({
+        interpreted,
+        execution,
+        failureReason,
+      }),
+      failureReason,
+      suggestion,
+    });
 
     const progress = [
       ...(execution.progress ?? []),

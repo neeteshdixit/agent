@@ -26,6 +26,14 @@ const resolveCommandCatalogPath = () => {
   return path.resolve(backendRoot, 'data', 'commands.catalog.json');
 };
 
+const resolveAiPath = (configured, fallbackSegments) => {
+  if (configured) {
+    return path.resolve(configured);
+  }
+
+  return path.resolve(backendRoot, ...fallbackSegments);
+};
+
 const parseJsonObjectEnv = (rawValue, fallback = {}) => {
   if (!rawValue) {
     return fallback;
@@ -63,4 +71,11 @@ export const env = {
   whatsappContacts: parseJsonObjectEnv(process.env.WHATSAPP_CONTACTS_JSON, {}),
   agentArtifactsDir: resolveArtifactsDir(),
   commandCatalogPath: resolveCommandCatalogPath(),
+  aiServiceUrl: process.env.AI_SERVICE_URL ?? 'http://127.0.0.1:5100',
+  aiServiceTimeoutMs: Number(process.env.AI_SERVICE_TIMEOUT_MS ?? 8000),
+  aiServiceHost: process.env.AI_SERVICE_HOST ?? '127.0.0.1',
+  aiServicePort: Number(process.env.AI_SERVICE_PORT ?? 5100),
+  aiDatasetPath: resolveAiPath(process.env.AI_DATASET_PATH, ['ai', 'data', 'command_dataset.json']),
+  aiMemoryPath: resolveAiPath(process.env.AI_MEMORY_PATH, ['ai', 'data', 'reinforcement_memory.json']),
+  aiModelPath: resolveAiPath(process.env.AI_MODEL_PATH, ['ai', 'models', 'intent_model.joblib']),
 };

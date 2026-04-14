@@ -1,74 +1,75 @@
 # AI Assistant Web Application
 
-This repository contains a full-stack AI assistant app with:
+This repository contains a full-stack assistant with:
 
 - Email/password authentication
 - Google OAuth login
 - OTP login via email
-- Forgot password + reset link
-- ChatGPT-style dashboard with saved conversation history
-- Agent Mode for automatic command interpretation + task execution
-- Task Runner panel with manual command execution
-- Voice input using Web Speech API
-- OpenAI integration for chat/command understanding
+- Forgot password and reset link flow
+- Chat dashboard with saved conversation history
+- Agent mode for command interpretation and task execution
+- Manual task runner
+- Voice input using the Web Speech API
+- OpenAI chat responses
+- Python ML-based command understanding with feedback learning
 - PostgreSQL persistence
 
 ## Stack
 
-- Frontend: React (JavaScript), TailwindCSS, Vite
+- Frontend: React, TailwindCSS, Vite
 - Backend: Node.js, Express
-- Database: PostgreSQL (`pg` driver)
-- Auth: JWT + Google ID token verification
+- AI service: Python, Flask, scikit-learn, RapidFuzz
+- Database: PostgreSQL
+- Auth: JWT and Google ID token verification
 
-## Project Structure
+## Folder Structure
 
 ```text
 /
-├─ src/
-│  ├─ components/
-│  │  ├─ auth/
-│  │  ├─ chat/
-│  │  ├─ layout/
-│  │  ├─ tasks/
-│  │  └─ ProtectedRoute.jsx
-│  ├─ context/AuthContext.jsx
-│  ├─ hooks/useSpeechRecognition.js
-│  ├─ lib/api.js
-│  ├─ pages/
-│  ├─ App.jsx
-│  ├─ main.jsx
-│  └─ index.css
-├─ backend/
-│  ├─ src/
-│  │  ├─ config/
-│  │  │  ├─ db.js
-│  │  │  └─ env.js
-│  │  ├─ controllers/
-│  │  ├─ middleware/
-│  │  ├─ repositories/
-│  │  ├─ routes/
-│  │  ├─ services/
-│  │  ├─ utils/
-│  │  ├─ app.js
-│  │  └─ server.js
-│  ├─ .env.example
-│  └─ package.json
-├─ .env.example
-├─ package.json
-├─ tailwind.config.js
-└─ postcss.config.js
+  src/
+    components/
+    context/
+    hooks/
+    lib/
+    pages/
+    App.jsx
+    main.jsx
+    index.css
+  backend/
+    src/
+      config/
+      controllers/
+      middleware/
+      repositories/
+      routes/
+      services/
+      utils/
+      app.js
+      server.js
+    ai/
+      app.py
+      train.py
+      intent_model.py
+      data/
+      models/
+    .env.example
+    package.json
+  .env.example
+  package.json
+  tailwind.config.js
+  postcss.config.js
 ```
 
 ## Environment
 
-### Frontend `.env`
+Frontend `.env`:
 
 ```env
 VITE_API_BASE_URL=http://localhost:5000/api
 VITE_GOOGLE_CLIENT_ID=
 ```
 
-### Backend `backend/.env`
+Backend `backend/.env`:
 
 ```env
 NODE_ENV=development
@@ -91,16 +92,18 @@ SMTP_SECURE=false
 SMTP_USER=
 SMTP_PASS=
 MAIL_FROM=no-reply@ai-agent.local
+WHATSAPP_CONTACTS_JSON={"hr maam":"919876543210"}
 
 AGENT_ARTIFACTS_DIR=./artifacts
-```
+CHROME_EXECUTABLE_PATH=
 
-Gemini via OpenAI-compatible API:
-
-```env
-OPENAI_API_KEY=AIza...
-OPENAI_BASE_URL=https://generativelanguage.googleapis.com/v1beta/openai/
-OPENAI_MODEL=gemini-2.0-flash
+AI_SERVICE_URL=http://127.0.0.1:5100
+AI_SERVICE_TIMEOUT_MS=8000
+AI_SERVICE_HOST=127.0.0.1
+AI_SERVICE_PORT=5100
+AI_DATASET_PATH=./ai/data/command_dataset.json
+AI_MEMORY_PATH=./ai/data/reinforcement_memory.json
+AI_MODEL_PATH=./ai/models/intent_model.joblib
 ```
 
 ## Run
@@ -120,4 +123,25 @@ npm install
 npm run dev
 ```
 
+Python AI service:
+
+```bash
+cd backend/ai
+python -m pip install -r requirements.txt
+python train.py
+python app.py
+```
+
 The backend auto-creates required PostgreSQL tables at startup.
+
+## Command Learning
+
+The command agent now uses the Python service for prediction and feedback:
+
+1. The Node backend sends the user command to `/predict`.
+2. The Python service applies RapidFuzz spell correction.
+3. A scikit-learn model predicts intent.
+4. Reinforcement memory updates from `/feedback`.
+5. The Node backend executes the selected action.
+
+If the Python service is unreachable, the backend falls back to the legacy router so the app remains usable.

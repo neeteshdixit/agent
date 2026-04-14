@@ -1,38 +1,97 @@
-# AI Assistant Backend (Node.js + Express)
+# AI Assistant Backend
+
+This backend now uses a Python ML service for command understanding and keeps the existing Node.js execution layer for safe automation.
 
 ## Setup
 
-1. Copy `.env.example` to `.env` and fill required values.
-2. Ensure PostgreSQL is running and `DATABASE_URL` points to your database.
-2. Install dependencies:
+1. Copy `backend/.env.example` to `backend/.env` and fill in your values.
+2. Install the Node.js dependencies from the repo root:
    ```bash
    npm install
    ```
-3. Start dev server:
+3. Install the Python dependencies for the AI service:
    ```bash
-   npm run dev
+   cd backend/ai
+   python -m pip install -r requirements.txt
+   ```
+4. Train the initial model:
+   ```bash
+   python train.py
+   ```
+5. Start the Python AI service:
+   ```bash
+   python app.py
+   ```
+6. Start the Node backend in a second terminal from the repo root:
+   ```bash
+   npm run dev:backend
    ```
 
-On startup the backend initializes required tables automatically.
+The backend still initializes PostgreSQL tables automatically at startup.
 
-## LLM Provider Setup
+## AI Command Flow
 
-Default (OpenAI):
+The active command pipeline is:
+
+1. Node.js receives the user command.
+2. Node calls the Python `/predict` API.
+3. The Python service corrects spelling with RapidFuzz.
+4. A scikit-learn intent model predicts the command intent.
+5. Reinforcement memory in JSON adjusts future predictions.
+6. Node executes the selected action.
+7. Node sends the execution result back to Python through `/feedback`.
+
+If the Python service is unavailable, the Node backend falls back to the legacy router so the app stays usable.
+
+## Python AI Service Files
+
+- `backend/ai/app.py` - Flask API for prediction, feedback, and training.
+- `backend/ai/train.py` - one-shot training script.
+- `backend/ai/intent_model.py` - ML model, spell correction, argument extraction, and RL memory.
+- `backend/ai/data/command_dataset.json` - supervised training dataset.
+- `backend/ai/data/reinforcement_memory.json` - reward table and feedback log.
+- `backend/ai/models/intent_model.joblib` - generated trained model artifact.
+
+## Environment
+
+### Backend `.env`
 
 ```env
-OPENAI_API_KEY=sk-...
+NODE_ENV=development
+PORT=5000
+DATABASE_URL=postgresql://postgres:postgres@127.0.0.1:5432/ai_agent
+DATABASE_SSL=false
+CLIENT_URL=http://localhost:5173
+
+JWT_SECRET=replace-with-a-long-random-secret
+JWT_EXPIRY=7d
+
+OPENAI_API_KEY=
+OPENAI_BASE_URL=
 OPENAI_MODEL=gpt-4.1-mini
+GOOGLE_CLIENT_ID=
+
+SMTP_HOST=
+SMTP_PORT=587
+SMTP_SECURE=false
+SMTP_USER=
+SMTP_PASS=
+MAIL_FROM=no-reply@ai-agent.local
+WHATSAPP_CONTACTS_JSON={"hr maam":"919876543210"}
+
+AGENT_ARTIFACTS_DIR=./artifacts
+CHROME_EXECUTABLE_PATH=
+
+AI_SERVICE_URL=http://127.0.0.1:5100
+AI_SERVICE_TIMEOUT_MS=8000
+AI_SERVICE_HOST=127.0.0.1
+AI_SERVICE_PORT=5100
+AI_DATASET_PATH=./ai/data/command_dataset.json
+AI_MEMORY_PATH=./ai/data/reinforcement_memory.json
+AI_MODEL_PATH=./ai/models/intent_model.joblib
 ```
 
-Gemini (OpenAI-compatible endpoint):
-
-```env
-OPENAI_API_KEY=AIza...
-OPENAI_BASE_URL=https://generativelanguage.googleapis.com/v1beta/openai/
-OPENAI_MODEL=gemini-2.0-flash
-```
-
-## API modules
+## API Modules
 
 - `POST /api/auth/signup`
 - `POST /api/auth/login`
@@ -50,9 +109,7 @@ OPENAI_MODEL=gemini-2.0-flash
 - `GET /api/tasks/history`
 - `POST /api/tasks/run`
 
-## Local Automation Commands
-
-Supported command examples:
+## Supported Command Examples
 
 - `open whatsapp installed in my pc`
 - `open whatsapp on chrome`
@@ -63,67 +120,21 @@ Supported command examples:
 - `play music`
 - `search best ai tools`
 
-## Command Catalog (500,000 commands JSON)
+## Learning Loop
 
-Generate a large command catalog JSON and enable catalog-first routing:
+- Successful commands are saved back into the dataset as new labeled examples.
+- Failed commands update the reinforcement memory with negative reward.
+- User corrections can be promoted into the training dataset automatically.
+- The Python model retrains from the JSON dataset whenever positive feedback arrives.
 
-```bash
-npm run commands:generate
-```
+## Node Execution Layer
 
-The generator creates `backend/data/commands.catalog.json` with 500,000 command entries by default.
-You can override path with:
+- Browser automation still uses `puppeteer-core` for YouTube, Gmail, and WhatsApp Web.
+- Local app and folder launches use `child_process` through a shared system command service.
+- Email and WhatsApp desktop flows remain in the existing automation layer.
 
-```env
-COMMAND_CATALOG_PATH=./backend/data/commands.catalog.json
-```
+## Useful Scripts
 
-Routing order:
-
-1. Exact match in command catalog JSON
-2. Existing rule-based parser
-3. LLM parser fallback (if configured)
-
-## Reinforcement-Style Feedback Learning
-
-The backend now includes a learning loop that improves command execution over time.
-
-Flow:
-
-1. Command received
-2. Learned mapping lookup
-3. Dataset/parser/LLM interpretation
-4. Task execution
-5. Task history logging
-6. Success/failure feedback updates
-7. Future commands use improved mappings
-
-### New persistence tables
-
-- `task_history`: command execution memory with `status`, `error_message`, `retry_after`, `attempts`, and failure suggestions.
-- `command_learning_examples`: learned instruction-to-action mappings from successful runs and user corrections.
-
-### Retry and cooldown behavior
-
-- On failure, system stores the failure and sets `retry_after = now + 1 hour`.
-- Repeating the same command before `retry_after` returns `status: waiting`.
-- After 3 failed attempts, cooldown message is returned: task cannot be executed now; retry in 1 hour.
-
-### Automatic learning updates
-
-- On successful execution, the command is saved as a new learned dataset example.
-- If a prior failed command appears corrected by a later successful command, the failed instruction is mapped to the corrected action automatically.
-
-### Failure analysis suggestions
-
-For repeated failures, system suggests safer alternatives (for example, fallback to WhatsApp Web in Chrome when desktop WhatsApp is unavailable).
-
-For reliable WhatsApp Desktop sending:
-- Use phone number directly: `send whatsapp message to +919876543210 saying hello`
-- Or set contact mapping in `.env`:
-  - `WHATSAPP_CONTACTS_JSON={"hr maam":"919876543210"}`
-
-## Browser Automation
-
-- Uses `puppeteer-core` to automate Chrome for safe, predefined actions.
-- Set `CHROME_EXECUTABLE_PATH` in `.env` if Chrome is installed in a custom location.
+- `npm run dev:backend` - start the Node API server from the repo root.
+- `npm --prefix backend run ai:serve` - start the Python AI API.
+- `npm --prefix backend run ai:train` - retrain the Python model once.

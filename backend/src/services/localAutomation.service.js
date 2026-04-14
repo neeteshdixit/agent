@@ -1,12 +1,9 @@
 import fs from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
-import { exec as execCallback } from 'node:child_process';
-import { promisify } from 'node:util';
 import open from 'open';
 import osu from 'node-os-utils';
-
-const exec = promisify(execCallback);
+import { systemCommandService } from './systemCommand.service.js';
 
 const WINDOWS_APPS = {
   whatsapp: {
@@ -107,12 +104,12 @@ const runTarget = async (target) => {
   }
 
   if (target.type === 'openPath') {
-    await open(target.value);
+    await systemCommandService.openTarget(target.value);
     return;
   }
 
   if (target.type === 'exec') {
-    await exec(target.value);
+    await systemCommandService.runShellCommand(target.value);
   }
 };
 
@@ -176,7 +173,7 @@ export const localAutomationService = {
   openDownloadsFolder: async () => {
     const downloadsPath = path.join(os.homedir(), 'Downloads');
     await fs.access(downloadsPath);
-    await open(downloadsPath);
+    await systemCommandService.openTarget(downloadsPath);
 
     return {
       status: 'completed',
@@ -202,7 +199,7 @@ export const localAutomationService = {
 
     try {
       await fs.access(folderPath);
-      await open(folderPath);
+      await systemCommandService.openTarget(folderPath);
       return {
         status: 'completed',
         result: {
@@ -223,7 +220,7 @@ export const localAutomationService = {
   playMusic: async ({ songPath }) => {
     if (songPath) {
       await fs.access(songPath);
-      await open(songPath);
+      await systemCommandService.openTarget(songPath);
       return {
         status: 'completed',
         result: {
