@@ -21,60 +21,60 @@ NEXUS AI evolves from a basic voice assistant foundation into a fully autonomous
   4. Task execution logs are persisted.
 **Plans**: 1 plan (Initial setup)
 
-### Phase 2: Smart Notification Filtering
-**Goal**: Implement the filtering layer to reduce mobile distraction.
+### Phase 2: Extension & Automation Foundation
+**Goal**: Build the browser extension and the automation layer for Email and WhatsApp.
 **Depends on**: Phase 1
-**Requirements**: Notification Filtering
+**Requirements**: Extension-Based Automation, Privacy Sandbox
 **Success Criteria**:
-  1. System can ingest notifications from Gmail and WhatsApp.
-  2. AI classifies notifications into "Important", "Ignore", or "Notify Urgently".
-  3. User is only alerted for "Urgently" classified items.
-**Plans**: 2 plans
+  1. Browser extension can read and interact with Email/WhatsApp UIs.
+  2. Agent executes "Draft email" and "Reply WhatsApp" commands directly in-browser.
+  3. Sensitive data is stored in a local encrypted vault.
+**Plans**: 3 plans
 
-### Phase 3: Communication Automation
-**Goal**: Enable the agent to handle outgoing and incoming communication autonomously.
+### Phase 3: Reinforcement Learning & Feedback
+**Goal**: Implement the self-learning brain that adapts to user feedback and daily data.
 **Depends on**: Phase 2
-**Requirements**: Email Automation, WhatsApp Automation
+**Requirements**: Reinforcement Learning (RL), Shadow Mode
 **Success Criteria**:
-  1. User can command "Draft an email to HR about X" and have it executed.
-  2. Agent can reply to priority WhatsApp conversations intelligently.
-  3. All communications require user confirmation before final "send" (MVP).
+  1. Agent operates in "Shadow Mode", suggesting actions for user approval.
+  2. Reward function updates based on user "Good/Bad" feedback.
+  3. Intent classification accuracy increases over 7 days of active feedback.
 **Plans**: 3 plans
 
-### Phase 4: Autonomous Task Execution
-**Goal**: Expand capabilities to web-based tasks and productivity management.
+### Phase 4: Smart Filtering & Contextual Awareness
+**Goal**: Intelligent notification management and location/activity sensing.
 **Depends on**: Phase 3
-**Requirements**: Food Ordering, Productivity Lock
+**Requirements**: Smart Notification Filtering, Contextual Awareness
 **Success Criteria**:
-  1. User can command "Order a burger under 200" and the agent compares options and prepares an order.
-  2. Productivity lock can block distractions and limit social media usage based on user-set rules.
+  1. System filters notifications based on current activity (Driving/Meeting).
+  2. Priority alerts (Recruiters/Emergencies) bypass silence modes.
 **Plans**: 2 plans
 
-### Phase 5: Coding Assistant Agent
-**Goal**: Support developer workflows with deployment and debugging tools.
+### Phase 5: Autonomous Call Handling
+**Goal**: Agent-managed call coordination and summarization.
 **Depends on**: Phase 4
-**Requirements**: Coding Assistant, CI/CD, Deployment
+**Requirements**: Autonomous Call Handling
 **Success Criteria**:
-  1. User can command "Deploy this project to Vercel".
-  2. Agent can detect and suggest fixes for build errors.
-**Plans**: 3 plans
-
-### Phase 6: Personalization & Self-Learning
-**Goal**: Implement long-term memory and reinforcement learning for habits.
-**Depends on**: Phase 5
-**Requirements**: Self-learning Personalization
-**Success Criteria**:
-  1. Agent remembers user preferences (favorite food, frequent contacts).
-  2. Intent classification improves based on user feedback/corrections.
+  1. Agent can summarize missed calls and coordinate follow-up messages.
+  2. User can delegate coordination tasks (e.g., "Tell X I'm late").
 **Plans**: 2 plans
+
+### Phase 6: Pro Developer Mode (Coding Assistant)
+**Goal**: Advanced automation for developer workflows and autonomous task execution.
+**Depends on**: Phase 5
+**Requirements**: Coding Assistant, Autonomous Task Execution
+**Success Criteria**:
+  1. Agent automates complex multi-step web tasks (Food ordering/Booking).
+  2. Pipeline generation and auto-debugging work for project repos.
+**Plans**: 3 plans
 
 ## Progress
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
 | 1. Foundation | v0.1 | 1/1 | Complete | 2026-05-16 |
-| 2. Notifications | v1.0 | 0/2 | Not started | - |
-| 3. Communication | v1.0 | 0/3 | Not started | - |
-| 4. Execution | v1.0 | 0/2 | Not started | - |
-| 5. Coding Agent | v2.0 | 0/3 | Not started | - |
-| 6. Personalization | v2.0 | 0/2 | Not started | - |
+| 2. Extension | v1.0 | 0/3 | Not started | - |
+| 3. RL & Feedback | v1.0 | 0/3 | Not started | - |
+| 4. Smart Filtering | v1.0 | 0/2 | Not started | - |
+| 5. Call Handling | v1.0 | 0/2 | Not started | - |
+| 6. Coding Agent | v2.0 | 0/3 | Not started | - |

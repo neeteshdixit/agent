@@ -1,10 +1,10 @@
 # NEXUS AI
 
 ## What This Is
-NEXUS AI is a fully autonomous personal AI Agent designed to reduce mobile addiction and perform digital tasks on behalf of the user. It operates via voice and text commands, serving as a smart assistant, productivity manager, and digital brain.
+NEXUS AI is a privacy-first, fully autonomous digital operator that lives as a browser/mobile extension. It handles the user's repetitive communication (Email, WhatsApp), filters notification clutter, and manages complex digital tasks using Reinforcement Learning to adapt to user habits and daily data.
 
 ## Core Value
-"Human speaks once -> AI handles everything" — autonomous task execution to maximize human focus and minimize digital distraction.
+"Human speaks once -> AI handles everything" — reducing mobile addiction by delegating digital life to a private, self-learning agent.
 
 ## Requirements
 
@@ -18,12 +18,13 @@ NEXUS AI is a fully autonomous personal AI Agent designed to reduce mobile addic
 - ✓ Browser automation foundation (Puppeteer-core) — existing
 
 ### Active
-- [ ] **Smart Notification Filtering**: AI checks WhatsApp, Telegram, Instagram, and Gmail to notify only when important.
-- [ ] **Email Automation**: Drafting and sending professional emails automatically based on user intent.
-- [ ] **WhatsApp Automation**: Reading messages, sending replies, and detecting priority conversations.
-- [ ] **Food Ordering**: Autonomous restaurant comparison, price matching, and ordering.
-- [ ] **Productivity Lock**: Limiting social media and blocking distractions to reduce mobile usage.
-- [ ] **Coding Assistant Agent (Phase 2)**: Pipeline generation, auto-debugging, and deployment automation (Vercel, Docker).
+- [ ] **Extension-Based Automation**: Browser/mobile extension to automate Email and WhatsApp directly from the UI.
+- [ ] **Reinforcement Learning (RL)**: Self-learning system that adapts intent classification and task priority based on user feedback and daily patterns.
+- [ ] **Smart Notification Filtering**: AI-driven importance classification for WhatsApp, Telegram, Instagram, and Gmail.
+- [ ] **Autonomous Call Handling**: Agent-managed coordination and summarization of important calls.
+- [ ] **Privacy Sandbox**: Local-first processing and zero-knowledge encryption for all user communications.
+- [ ] **Shadow Mode**: Safe "suggestion-first" execution to build user trust and train the RL model.
+- [ ] **Contextual Awareness**: Location and activity sensing to filter notifications smarter.
 
 ### Out of Scope
 - [Traditional Chatbot] — Explicitly moving beyond hardcoded command systems to autonomous agents.
