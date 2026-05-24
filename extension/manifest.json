@@ -1,0 +1,27 @@
+{
+  "manifest_version": 3,
+  "name": "NEXUS AI Digital Operator",
+  "version": "1.0.0",
+  "description": "Autonomous browser assistant that intercepts tabs and interacts with the NEXUS AI backend.",
+  "permissions": [
+    "activeTab",
+    "tabs",
+    "scripting",
+    "storage"
+  ],
+  "host_permissions": [
+    "http://localhost:5000/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["*://mail.google.com/*", "*://web.whatsapp.com/*"],
+      "js": ["content.js"]
+    }
+  ],
+  "action": {
+    "default_popup": "popup.html"
+  }
+}

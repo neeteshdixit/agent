@@ -18,6 +18,11 @@ const client = (() => {
   return new OpenAI(options);
 })();
 
+const ollamaClient = new OpenAI({
+  baseURL: process.env.OLLAMA_BASE_URL || 'http://127.0.0.1:11434/v1',
+  apiKey: 'ollama',
+});
+
 const isGeminiEndpoint = env.openaiBaseUrl.includes('generativelanguage.googleapis.com');
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -259,13 +264,19 @@ const normalizeInterpretedAction = ({ payload, parsedByRule }) => {
 
 export const openaiService = {
   generateChatReply: async ({ messages }) => {
-    if (!client) {
+    const useOllama = process.env.CHAT_MODEL_PROVIDER === 'ollama';
+    const activeClient = useOllama ? ollamaClient : client;
+    const activeModel = useOllama 
+      ? (process.env.OLLAMA_MODEL || 'llama3.2:latest')
+      : env.openaiModel;
+
+    if (!activeClient) {
       return 'LLM API key is not configured. I can still help with local task execution and command parsing.';
     }
 
     try {
       const request = {
-        model: env.openaiModel,
+        model: activeModel,
         temperature: 0.2,
         messages: [
           {
@@ -281,11 +292,14 @@ export const openaiService = {
       let lastError = null;
       for (let attempt = 0; attempt < 2; attempt += 1) {
         try {
-          completion = await client.chat.completions.create(request);
+          completion = await activeClient.chat.completions.create(request);
           lastError = null;
           break;
         } catch (error) {
           lastError = error;
+          if (useOllama) {
+            break;
+          }
           if (!isRetryableProviderError(error) || attempt === 1) {
             break;
           }
@@ -300,6 +314,26 @@ export const openaiService = {
 
       return completion.choices[0]?.message?.content?.trim() ?? 'I could not generate a response.';
     } catch (error) {
+      if (useOllama && client) {
+        console.warn('Ollama chat failed, falling back dynamically to Cloud Gemini:', error.message);
+        try {
+          const completion = await client.chat.completions.create({
+            model: env.openaiModel,
+            temperature: 0.2,
+            messages: [
+              {
+                role: 'system',
+                content: 'You are a reliable AI assistant. Provide concise, actionable responses.',
+              },
+              ...messages,
+            ],
+          });
+          return completion.choices[0]?.message?.content?.trim() ?? 'I could not generate a response.';
+        } catch (fallbackErr) {
+          console.error('Fallback cloud Gemini also failed:', fallbackErr.message);
+        }
+      }
+
       if (error?.code === 'insufficient_quota') {
         return buildOfflineChatReply(messages);
       }
@@ -325,11 +359,11 @@ export const openaiService = {
       }
 
       if (error?.code === 'model_not_found') {
-        return `Configured model "${env.openaiModel}" is unavailable for the selected model provider.`;
+        return `Configured model "${activeModel}" is unavailable for the selected model provider.`;
       }
 
       if (error?.status === 404) {
-        return `Configured model "${env.openaiModel}" is unavailable for the selected model provider.`;
+        return `Configured model "${activeModel}" is unavailable for the selected model provider.`;
       }
 
       console.error('OpenAI chat generation failed:', {

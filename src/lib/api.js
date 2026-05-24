@@ -75,4 +75,13 @@ export const endpoints = {
 
   runTask: (payload) => apiRequest('/tasks/run', { method: 'POST', body: payload }),
   taskHistory: () => apiRequest('/tasks/history'),
+
+  // Platform features
+  getPreferences: () => apiRequest('/platform/preferences'),
+  savePreference: (payload) => apiRequest('/platform/preferences', { method: 'POST', body: payload }),
+  getRoutines: () => apiRequest('/platform/routines'),
+  createRoutine: (payload) => apiRequest('/platform/routines', { method: 'POST', body: payload }),
+  getRecommendations: () => apiRequest('/platform/recommendations'),
+  updateRecommendationStatus: (id, status) => apiRequest(`/platform/recommendations/${id}/status`, { method: 'POST', body: { status } }),
+  submitFeedback: (payload) => apiRequest('/platform/feedback', { method: 'POST', body: payload }),
 };

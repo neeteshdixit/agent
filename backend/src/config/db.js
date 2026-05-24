@@ -142,6 +142,57 @@ const schemaQueries = [
   )`,
   `CREATE INDEX IF NOT EXISTS command_learning_user_idx
    ON command_learning_examples(user_id, updated_at DESC)`,
+  `CREATE TABLE IF NOT EXISTS ai_memory (
+    id TEXT PRIMARY KEY,
+    user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    key VARCHAR(120) NOT NULL,
+    value JSONB NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    UNIQUE(user_id, key)
+  )`,
+  `CREATE INDEX IF NOT EXISTS idx_ai_memory_user_key ON ai_memory(user_id, key)`,
+  `CREATE TABLE IF NOT EXISTS routines (
+    id TEXT PRIMARY KEY,
+    user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    name VARCHAR(150) NOT NULL,
+    trigger_type VARCHAR(32) NOT NULL,
+    trigger_value JSONB NOT NULL,
+    workflow_id TEXT,
+    is_active BOOLEAN NOT NULL DEFAULT TRUE,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+  )`,
+  `CREATE TABLE IF NOT EXISTS workflows (
+    id TEXT PRIMARY KEY,
+    user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    title VARCHAR(150) NOT NULL,
+    steps JSONB NOT NULL,
+    status VARCHAR(24) NOT NULL DEFAULT 'draft',
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+  )`,
+  `CREATE TABLE IF NOT EXISTS rl_feedback (
+    id TEXT PRIMARY KEY,
+    user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    command TEXT NOT NULL,
+    corrected_command TEXT,
+    state_vector JSONB NOT NULL,
+    selected_action VARCHAR(80) NOT NULL,
+    reward NUMERIC(4, 2) NOT NULL,
+    source VARCHAR(32) NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+  )`,
+  `CREATE INDEX IF NOT EXISTS idx_rl_feedback_user ON rl_feedback(user_id)`,
+  `CREATE TABLE IF NOT EXISTS recommendations (
+    id TEXT PRIMARY KEY,
+    user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    title VARCHAR(200) NOT NULL,
+    description TEXT,
+    action_payload JSONB NOT NULL,
+    score NUMERIC(5, 4) NOT NULL,
+    status VARCHAR(24) NOT NULL DEFAULT 'pending',
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+  )`,
+  `CREATE INDEX IF NOT EXISTS idx_recommendations_user ON recommendations(user_id)`,
 ];
 
 export const connectDb = async () => {
