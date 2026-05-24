@@ -1,10 +1,12 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
+import os from 'node:os';
 import open from 'open';
 import { env } from '../config/env.js';
 import { localAutomationService } from './localAutomation.service.js';
 import { browserAutomationService } from './browserAutomation.service.js';
 import { messagingAutomationService } from './messagingAutomation.service.js';
+import { systemCommandService } from './systemCommand.service.js';
 
 const sanitizeFilename = (value) => value.replace(/[^a-z0-9-_]/gi, '-').slice(0, 50);
 const normalizeBrowser = (value) => String(value ?? '').toLowerCase().trim();
@@ -482,6 +484,56 @@ export const taskExecutorService = {
           'Failed to send email using SMTP automation.',
         );
         return withStep(execution.status, execution.result);
+      }
+
+      case 'create_text_file': {
+        const content = String(args.content ?? '').trim();
+        let fileName = String(args.fileName ?? '').trim();
+        
+        if (!content) {
+          return withStep('blocked', {
+            message: 'Content is required to create a text file.',
+          });
+        }
+        
+        if (!fileName) {
+          fileName = `note-${Date.now()}.txt`;
+        }
+
+        const openFile = args.openFile !== false;
+        progress.push(`Creating text file: ${fileName}`);
+        
+        const execution = await safeExecute(async () => {
+          let desktopDir = path.join(os.homedir(), 'Desktop');
+          try {
+            await fs.access(desktopDir);
+          } catch {
+            const oneDriveDesktop = path.join(os.homedir(), 'OneDrive', 'Desktop');
+            try {
+              await fs.access(oneDriveDesktop);
+              desktopDir = oneDriveDesktop;
+            } catch {
+              desktopDir = os.homedir();
+            }
+          }
+          const filePath = path.join(desktopDir, fileName);
+          await fs.writeFile(filePath, content, 'utf8');
+          
+          if (openFile) {
+            progress.push(`Opening file in default editor: ${fileName}`);
+            await systemCommandService.openTarget(filePath);
+          }
+          
+          return {
+            status: 'completed',
+            result: {
+              message: `Successfully created text file "${fileName}" on your Desktop.${openFile ? ' Opening it in Notepad.' : ''}`,
+              filePath,
+            },
+          };
+        }, 'Failed to create local text file.');
+
+        return withStep(execution.status ?? 'completed', execution.result ?? execution);
       }
 
       case 'chat_only':

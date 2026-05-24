@@ -79,6 +79,13 @@ const normalizeArgs = (action, args = {}, fallbackArgs = {}) => {
         songPath: pick(args.songPath, fallbackArgs.songPath),
       };
 
+    case 'create_text_file':
+      return {
+        fileName: pick(args.fileName, args.filename, fallbackArgs.fileName, fallbackArgs.filename),
+        content: pick(args.content, fallbackArgs.content),
+        openFile: args.openFile !== undefined ? args.openFile : (fallbackArgs.openFile !== undefined ? fallbackArgs.openFile : true),
+      };
+
     default:
       return {};
   }

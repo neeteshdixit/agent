@@ -1,8 +1,12 @@
 import { DynamicStructuredTool } from '@langchain/core/tools';
 import { z } from 'zod';
+import fs from 'node:fs/promises';
+import os from 'node:os';
+import path from 'node:path';
 import { localAutomationService } from '../localAutomation.service.js';
 import { browserAutomationService } from '../browserAutomation.service.js';
 import { messagingAutomationService } from '../messagingAutomation.service.js';
+import { systemCommandService } from '../systemCommand.service.js';
 
 export const systemTools = (userId, userContext = {}) => [
   new DynamicStructuredTool({
@@ -201,6 +205,46 @@ export const systemTools = (userId, userContext = {}) => [
         if (target === 'youtube') res = await browserAutomationService.openYouTube();
         if (target === 'whatsapp') res = await browserAutomationService.openWhatsAppWeb();
         return JSON.stringify({ status: res.status, result: res.result });
+      } catch (err) {
+        return JSON.stringify({ status: 'failed', error: err.message });
+      }
+    },
+  }),
+
+  new DynamicStructuredTool({
+    name: 'create_text_file',
+    description: 'Create a local text file with specific content (e.g., notes, letters, memos, applications) and optionally open it.',
+    schema: z.object({
+      fileName: z.string().describe('The name of the file to create, e.g., application.txt'),
+      content: z.string().describe('The text content to write into the file'),
+      openFile: z.boolean().default(true).describe('Whether to automatically open the created file using the default editor (Notepad)'),
+    }),
+    func: async ({ fileName, content, openFile }) => {
+      try {
+        let desktopDir = path.join(os.homedir(), 'Desktop');
+        try {
+          await fs.access(desktopDir);
+        } catch {
+          const oneDriveDesktop = path.join(os.homedir(), 'OneDrive', 'Desktop');
+          try {
+            await fs.access(oneDriveDesktop);
+            desktopDir = oneDriveDesktop;
+          } catch {
+            desktopDir = os.homedir();
+          }
+        }
+        const filePath = path.join(desktopDir, fileName);
+        await fs.writeFile(filePath, content, 'utf8');
+        
+        if (openFile) {
+          await systemCommandService.openTarget(filePath);
+        }
+        
+        return JSON.stringify({
+          status: 'success',
+          filePath,
+          message: `Successfully created text file "${fileName}" on your Desktop.${openFile ? ' Opening it in Notepad.' : ''}`,
+        });
       } catch (err) {
         return JSON.stringify({ status: 'failed', error: err.message });
       }

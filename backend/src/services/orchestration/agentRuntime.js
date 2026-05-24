@@ -13,9 +13,10 @@ export const agentRuntime = {
 
     const model = new ChatGoogleGenerativeAI({
       apiKey,
-      modelName: 'gemini-1.5-flash',
+      model: process.env.OPENAI_MODEL || 'gemini-2.0-flash',
       temperature: 0.2,
       maxOutputTokens: 1024,
+      maxRetries: 0,
     });
 
     const tools = systemTools(userId, userContext);

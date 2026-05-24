@@ -290,6 +290,30 @@ export const commandParserService = {
       }
     }
 
+    const notepadIntent = /\b(notepad|note pad|text file|txt file|note|letter|application|sick leave|sick_leave|leave application|application for|write a note|create a note)\b/i.test(text) ||
+      /\b(likh do|likh|note likho|application likh|sick leave application|sick leave letter|sick_leave_application)\b/i.test(text);
+
+    if (notepadIntent) {
+      let content = 'Respected Sir/Madam,\n\nI am writing to request sick leave due to a sudden fever. I will not be able to attend office today. Please grant me leave.\n\nSincerely,\nUser';
+      let fileName = 'application.txt';
+      
+      if (text.includes('sick leave') || text.includes('sick_leave') || text.includes('fever') || text.includes('bimar')) {
+        fileName = 'sick_leave_application.txt';
+      } else if (text.includes('leave') || text.includes('chutti')) {
+        fileName = 'leave_application.txt';
+      }
+      
+      return {
+        action: 'create_text_file',
+        args: {
+          fileName,
+          content,
+          openFile: true,
+        },
+        source: 'parser',
+      };
+    }
+
     if (playIntent) {
       return { action: 'play_music', args: {}, source: 'parser' };
     }
