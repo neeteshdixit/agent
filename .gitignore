@@ -18,6 +18,9 @@ backend/ai/models
 backend/ai/__pycache__
 backend/ai/*.pyc
 
+# Local database data
+postgres-local/
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
